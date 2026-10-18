@@ -1,0 +1,93 @@
+/* The goals box and the search install on the Settings page (settings.js).
+   They kept the old Settings page's field grammar when it was rebuilt
+   (NC-114), and these are the only rules of that page's stylesheet left after
+   it was deleted (NC-236). Loaded after ui.css and view-data.css (index.html),
+   so it is the current word on the .settings-* selectors it names. */
+
+/* ── One field ──────────────────────────────────────────────────────────────
+   name + key hint · one line of why · control (+ Save only when dirty) */
+.settings-field { padding: var(--gap) 0; }
+.settings-field-label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  font-family: var(--sans);          /* ui.css set --mono here; the name is prose now */
+}
+.settings-field-name {
+  font-size: var(--fs-title);
+  font-weight: 650;
+  letter-spacing: -.01em;
+  line-height: var(--lh-tight);
+  color: var(--ink);
+}
+.settings-field-help {
+  font-size: var(--fs-ui);
+  font-weight: 400;
+  color: var(--muted);
+  line-height: var(--lh-body);
+  margin-top: 3px;
+  max-width: 66ch;
+}
+.settings-field-row {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: center;
+  margin-top: var(--gap-sm);
+  flex-wrap: wrap;
+}
+.settings-field-row .input { flex: 1; min-width: 200px; }
+/* A picker sizes to its longest option; stretching it across the row made it
+   read as a text field. */
+.settings-field-row select.input { flex: 0 1 auto; }
+/* NC-010's goals box. The only multi-line field in Settings, so it does not
+   share .settings-field-row's `.input { flex: 1 }` sizing — it sits on its own
+   line at full width, above the row that holds Save and the counter. 66ch, not
+   --measure: it matches the help text directly above it.
+
+   QUALIFIED WITH `textarea` ON PURPOSE, and it is not cosmetic. ui.css sets
+   `.input, textarea.input { min-height: var(--ctl-h) }`, and `textarea.input` is
+   (0,1,1) against a bare `.settings-goals`'s (0,1,0) — so an unqualified rule
+   loses the cascade and min-height resolves to 28px. It would look correct in a
+   browser only because rows="5" supplies the height, and dragging the resize
+   handle would then collapse the box to one line. `resize` is not repeated here;
+   vertical already comes from .input and is right. */
+textarea.settings-goals {
+  display: block;
+  width: 100%;
+  max-width: 66ch;
+  margin-top: var(--gap-sm);
+  min-height: 96px;
+  line-height: var(--lh-body);
+}
+
+/* Redundant with the Save button sitting beside it, so --faint is correct. */
+.set-enter {
+  font-size: var(--fs-overline);
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+
+/* NC-314. Remove everything, last on the Settings page. The armed and finished
+   states take the row's full width: a list and a typed word do not fit beside
+   a label. */
+.remove-all { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.remove-all.is-armed,
+.remove-all.is-done {
+  flex-basis: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: var(--fs-ui);
+  color: var(--ink);
+}
+/* On the children, not the box: a max-width on the box caps its flex-basis, and
+   it then sits beside its label instead of under it. */
+.remove-all.is-armed > p,
+.remove-all.is-done > p,
+.remove-all-list,
+.remove-all-steps { max-width: 66ch; }
+.remove-all p { margin: 0; line-height: var(--lh-body); }
+.remove-all-list,
+.remove-all-steps { margin: 0; padding-left: 1.4em; line-height: var(--lh-body); }
+.remove-all-list code { font-family: var(--mono); color: var(--muted); }

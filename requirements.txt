@@ -1,0 +1,65 @@
+# Runtime dependencies for the packaged app.
+#
+# The app installs the exact versions of this file's packages (and everything
+# they pull in, from requirements-lock.txt) into its own Python environment on
+# the first start of each version (crm/python_env.py). So anything a shipped
+# feature needs at
+# runtime belongs here, uncommented. Anything left in a comment does not get
+# installed — that is not a note-to-self, it is a feature that will silently
+# degrade on every machine it is installed on.
+#
+# That is how an Ask view ends up on its rule-based engine on every install,
+# answering questions badly instead of erroring: `anthropic` left in an
+# "Optional" comment block. tests/test_packaging.py asserts this file covers
+# every non-stdlib import in crm/.
+#
+# Exact versions, not minimums (NC-316). With ">=" each person got whatever was
+# newest on the day they first opened the app, so no two installs ran the same
+# code, and a package taken over by someone else would have reached everyone who
+# opened the app that day, with access to their messages. Every package these
+# pull in is pinned too, with its fingerprints, in requirements-lock.txt, which
+# is what the app installs. To move to newer versions, change both files together;
+# tests/test_packaging_fixes.py keeps them in step.
+#
+# The core app is standard-library only. Everything here serves one optional
+# feature, and each import site degrades gracefully if it is missing — but for a
+# feature we advertise in the UI, "degrades gracefully" is not good enough.
+
+# ── Ask (the LLM brain) ──────────────────────────────────────────────────────
+# crm/chat.py's tool-use loop and crm/api_briefs.py's brief/draft generation.
+# Small (~1MB). ANTHROPIC_API_KEY is managed in the in-app Settings view, and
+# with no key the app still works — it just uses the rule-based engine.
+anthropic==1.0.0
+
+# ── Bots — removed ───────────────────────────────────────────────────────────
+# python-telegram-bot and APScheduler were once needed by the Telegram and
+# WhatsApp bots. The bots are gone, and nothing imports either package.
+# The Telegram *importer* (crm/telegram_import.py) is unaffected — it reads a
+# JSON export with the standard library and never needed these.
+
+# ── Google contact photos import ─────────────────────────────────────────────
+google-auth-oauthlib==1.4.0
+google-api-python-client==2.199.0
+
+# ── HTTP client ──────────────────────────────────────────────────────────────
+# crm/linkedin_import.py imports this at MODULE level, so without it that
+# module fails to import at all rather than degrading. It was only ever
+# present transitively (google-api-core and requests-oauthlib both pull it), which
+# worked by luck — declare it so a dependency bump can't silently remove it.
+requests==2.34.2
+
+# ── NOT installed by default, on purpose ─────────────────────────────────────
+# Semantic search (crm/search_cli.py's meaning-based ranking, and the Ask view's
+# semantic_search tool) needs sentence-transformers + numpy, which pull PyTorch —
+# roughly 2GB. Shipping that to every user means a first launch that appears
+# to hang for many minutes, so it is opt-in from the Settings view instead:
+#   sentence-transformers
+#   numpy
+# search_cli.embeddings_available() is the runtime check; keyword + FTS5 search
+# work fully without them.
+#
+# Developer-machine only, never part of the app:
+#   selenium   — crm/scrape_linkedin_profiles.py, runs on a separate scraper Mac
+#                and drives system Firefox via geckodriver. See that script's
+#                docstring.
+#   ruff       — lint; see ruff.toml.

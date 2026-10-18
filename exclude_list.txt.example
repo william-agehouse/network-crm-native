@@ -1,0 +1,11 @@
+# People the app should never import or show, one full name per line. The People
+# page's Hidden contacts list writes this same file, one name at a time; copying
+# this file is for adding many at once. Copy it to exclude_list.txt in the app's
+# data folder: data/ when you run it from the source code, or
+# ~/Library/Application Support/NetworkCRM/data for the Mac app. Imports read it
+# each time they run. Lines starting with # are ignored. exclude_list.txt is
+# ignored by git, so these names stay private.
+#
+# Example:
+# Jane Doe
+# John Smith

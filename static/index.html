@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Network CRM</title>
+<!-- Matches .wordmark .mark in ui.css: a blue rounded square with a bold sans
+     "n", at the same 20% corner radius and ~65% cap height. It was a persimmon
+     circle with an italic Georgia "n" — the retired editorial identity, still
+     shipping in the browser tab and the installed icon long after the app
+     itself stopped looking like that. Hardcoded hexes are unavoidable here:
+     a data: URI cannot read a CSS custom property. --accent #3b6fe0. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%233b6fe0'/%3E%3Ctext x='16' y='23' font-family='Helvetica,Arial,sans-serif' font-size='20' font-weight='700' fill='%23ffffff' text-anchor='middle'%3En%3C/text%3E%3C/svg%3E" />
+<link rel="manifest" href="manifest.webmanifest" />
+<!-- The OS chrome should continue the app's tinted shell (--bg), not contrast
+     with it. Two tags so the notch/status bar follows the theme; the manifest
+     cannot express a media query, so it carries the light value only. -->
+<meta name="theme-color" content="#f3f3f4" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0f0f13" media="(prefers-color-scheme: dark)" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/ui.css" />
+<!-- per-view styles, one file per view -->
+<link rel="stylesheet" href="css/view-ask.css" />
+<link rel="stylesheet" href="css/view-network.css" />
+<link rel="stylesheet" href="css/view-data.css" />
+<link rel="stylesheet" href="css/view-setup.css" />
+<link rel="stylesheet" href="css/view-settings.css" />
+<link rel="stylesheet" href="css/view-intake.css" />
+<link rel="stylesheet" href="css/view-ledger.css" />
+<!-- NC-049. Render-blocking on purpose, and that is the point: a linked
+     stylesheet from a local http.server is applied BEFORE first paint, so the
+     boot layer is never seen unstyled. It must load ahead of app/main.js,
+     which is a module and therefore deferred — the app has usually mounted
+     before DOMContentLoaded would even fire. -->
+<link rel="stylesheet" href="css/boot.css" />
+<script>
+  // Set the theme before first paint to avoid a flash. "auto" follows the OS.
+  (function () {
+    var pref = localStorage.getItem("nc_theme") || "auto";
+    var dark = pref === "dark" || (pref === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
+</head>
+<body>
+<!-- NC-049. The boot layer, ahead of #root so it paints on the very first frame
+     rather than waiting for the module graph. main.js removes it on mount; the
+     failsafe in boot.css removes it anyway if main.js never runs.
+
+     One animation now (NC-062). There were five and a Settings picker; the
+     picker went and constellation stayed, so the `data-boot` attribute went
+     with it and boot.css scopes to #boot. -->
+<script>/* NC-049: first-paint clock for dismissBoot()'s --boot-min. Inline and
+     synchronous on purpose — a deferred module records the wrong zero. */
+  document.documentElement.dataset.bootAt = String(performance.now());</script>
+<div id="boot" aria-hidden="true">
+  <!-- NC-049 · constellation. 14 nodes and 20 edges, laid out
+       deterministically (a ring of nine, four inner, one centre) so the
+       collapse reads as the network folding into the mark rather than as
+       points blinking out. Node colours are the real --ring-* closeness
+       tiers, so what settles is this app's own vocabulary and both themes
+       come free. Each line carries pathLength="1" so a single dashoffset rule
+       draws all twenty regardless of their real lengths. -->
+  <svg class="boot-net" viewBox="0 0 100 100" aria-hidden="true">
+    <line style="--i:0" pathLength="1" x1="50.0" y1="17.0" x2="71.2" y2="24.7" stroke-width=".9" />
+    <line style="--i:1" pathLength="1" x1="71.2" y1="24.7" x2="82.5" y2="44.3" stroke-width=".9" />
+    <line style="--i:2" pathLength="1" x1="82.5" y1="44.3" x2="78.6" y2="66.5" stroke-width=".9" />
+    <line style="--i:3" pathLength="1" x1="78.6" y1="66.5" x2="61.3" y2="81.0" stroke-width=".9" />
+    <line style="--i:4" pathLength="1" x1="61.3" y1="81.0" x2="38.7" y2="81.0" stroke-width=".9" />
+    <line style="--i:5" pathLength="1" x1="38.7" y1="81.0" x2="21.4" y2="66.5" stroke-width=".9" />
+    <line style="--i:6" pathLength="1" x1="21.4" y1="66.5" x2="17.5" y2="44.3" stroke-width=".9" />
+    <line style="--i:7" pathLength="1" x1="17.5" y1="44.3" x2="28.8" y2="24.7" stroke-width=".9" />
+    <line style="--i:8" pathLength="1" x1="28.8" y1="24.7" x2="50.0" y2="17.0" stroke-width=".9" />
+    <line style="--i:9" pathLength="1" x1="50.0" y1="17.0" x2="60.6" y2="39.4" stroke-width=".9" />
+    <line style="--i:10" pathLength="1" x1="82.5" y1="44.3" x2="39.4" y2="60.6" stroke-width=".9" />
+    <line style="--i:11" pathLength="1" x1="61.3" y1="81.0" x2="60.6" y2="39.4" stroke-width=".9" />
+    <line style="--i:12" pathLength="1" x1="21.4" y1="66.5" x2="39.4" y2="60.6" stroke-width=".9" />
+    <line style="--i:13" pathLength="1" x1="28.8" y1="24.7" x2="60.6" y2="39.4" stroke-width=".9" />
+    <line style="--i:14" pathLength="1" x1="60.6" y1="39.4" x2="50.0" y2="50.0" stroke-width=".9" />
+    <line style="--i:15" pathLength="1" x1="60.6" y1="60.6" x2="50.0" y2="50.0" stroke-width=".9" />
+    <line style="--i:16" pathLength="1" x1="39.4" y1="60.6" x2="50.0" y2="50.0" stroke-width=".9" />
+    <line style="--i:17" pathLength="1" x1="39.4" y1="39.4" x2="50.0" y2="50.0" stroke-width=".9" />
+    <line style="--i:18" pathLength="1" x1="60.6" y1="39.4" x2="39.4" y2="60.6" stroke-width=".9" />
+    <line style="--i:19" pathLength="1" x1="60.6" y1="60.6" x2="39.4" y2="39.4" stroke-width=".9" />
+    <circle style="--i:0" cx="50.0" cy="17.0" r="1.6" fill="var(--ring-faint)" />
+    <circle style="--i:1" cx="71.2" cy="24.7" r="1.6" fill="var(--ring-loose)" />
+    <circle style="--i:2" cx="82.5" cy="44.3" r="1.6" fill="var(--ring-loose)" />
+    <circle style="--i:3" cx="78.6" cy="66.5" r="1.6" fill="var(--ring-faint)" />
+    <circle style="--i:4" cx="61.3" cy="81.0" r="1.6" fill="var(--ring-loose)" />
+    <circle style="--i:5" cx="38.7" cy="81.0" r="1.6" fill="var(--ring-loose)" />
+    <circle style="--i:6" cx="21.4" cy="66.5" r="1.6" fill="var(--ring-faint)" />
+    <circle style="--i:7" cx="17.5" cy="44.3" r="1.6" fill="var(--ring-loose)" />
+    <circle style="--i:8" cx="28.8" cy="24.7" r="1.6" fill="var(--ring-loose)" />
+    <circle style="--i:9" cx="60.6" cy="39.4" r="2.0" fill="var(--ring-active)" />
+    <circle style="--i:10" cx="60.6" cy="60.6" r="2.0" fill="var(--ring-active)" />
+    <circle style="--i:11" cx="39.4" cy="60.6" r="2.0" fill="var(--ring-active)" />
+    <circle style="--i:12" cx="39.4" cy="39.4" r="2.0" fill="var(--ring-active)" />
+    <circle style="--i:13" cx="50.0" cy="50.0" r="2.6" fill="var(--ring-close)" />
+  </svg>
+  <div class="boot-bar">
+    <span class="boot-mark">n</span>
+    <span class="boot-name">Network CRM</span>
+  </div>
+  <div class="boot-view">
+    <div class="boot-row" style="--i:0"><span class="boot-dot"></span><span class="boot-cell" style="width:22%"></span><span class="boot-cell" style="width:14%"></span></div>
+    <div class="boot-row" style="--i:1"><span class="boot-dot"></span><span class="boot-cell" style="width:28%"></span><span class="boot-cell" style="width:11%"></span></div>
+    <div class="boot-row" style="--i:2"><span class="boot-dot"></span><span class="boot-cell" style="width:18%"></span><span class="boot-cell" style="width:17%"></span></div>
+    <div class="boot-row" style="--i:3"><span class="boot-dot"></span><span class="boot-cell" style="width:25%"></span><span class="boot-cell" style="width:9%"></span></div>
+    <div class="boot-row" style="--i:4"><span class="boot-dot"></span><span class="boot-cell" style="width:20%"></span><span class="boot-cell" style="width:15%"></span></div>
+    <div class="boot-row" style="--i:5"><span class="boot-dot"></span><span class="boot-cell" style="width:30%"></span><span class="boot-cell" style="width:12%"></span></div>
+    <div class="boot-row" style="--i:6"><span class="boot-dot"></span><span class="boot-cell" style="width:16%"></span><span class="boot-cell" style="width:19%"></span></div>
+    <div class="boot-row" style="--i:7"><span class="boot-dot"></span><span class="boot-cell" style="width:24%"></span><span class="boot-cell" style="width:10%"></span></div>
+  </div>
+</div>
+<div id="root"></div>
+<script type="module" src="app/main.js"></script>
+</body>
+</html>

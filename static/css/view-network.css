@@ -1,0 +1,489 @@
+/* View-specific styles for the network (People) view.
+   Shared primitives (buttons, inputs, tag pills, popovers, avatars, skeletons,
+   receipts, steppers) live in ui.css — used here, never re-implemented.
+
+   The People surface is a RECORD TABLE, not a card list. Every value below comes
+   from tokens.css: 40px rows (--row-h), 13px text (--fs-ui), hairline dividers
+   (--line), the staleness ramp (--stale-*) and the closeness ramp (--ring-*).
+   Hierarchy is weight, not size — there is exactly one type size in the table.
+
+   Density, at a 720px viewport: 62px shell topbar + 8px pad + 36px toolbar
+   (28px controls + 8px) + 28px column header = 134px of chrome, leaving 586px →
+   14 whole 40px rows. The card list it replaces fit about 6. */
+
+/* ── Layout: table, then the person beside it ────────────────────────────────── */
+.nx-people {
+  /* Tracks the height of the shell topbar. The table owns its own scroller so
+     the column header can stick to the top of it, so this offset lives in one
+     place and is the only thing to retune if the shell chrome changes. */
+  --nx-top: 62px;
+  /* Compact control + column-header height (controls are 24–28px), and
+     the width the table keeps once a person is open. Two more density knobs. */
+  --nx-ctl: 28px;
+  --nx-rail: 340px;
+  display: flex;
+  align-items: stretch;
+  height: calc(100dvh - var(--nx-top));
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.nx-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  padding: var(--gap-sm) var(--pad-view) 0;
+}
+/* A person is open: the table becomes a rail and hands over the width. */
+.nx-people.split .nx-list {
+  flex: none;
+  width: var(--nx-rail);
+  border-right: 1px solid var(--line);
+  padding-right: var(--gap);
+}
+.nx-detail {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--pad-view) var(--pad-view) 60px;
+}
+
+/* ── Toolbar: view · search · sort · filter · count · add ───────────────────── */
+.nx-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  padding-bottom: var(--gap-sm);
+}
+.nx-spacer { flex: 1; }
+.nx-search {
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 300px;
+  height: var(--nx-ctl);
+  padding: 0 10px;
+  font-size: var(--fs-ui);
+}
+/* The count. One owner in people.js (countState), stated once, here. */
+.nx-count {
+  font-size: var(--fs-ui);
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.nx-count b { color: var(--ink); font-weight: 650; }
+.nx-note { font-size: var(--fs-overline); color: var(--muted); line-height: var(--lh-body); padding: 0 2px var(--gap-sm); }
+/* NC-319: the LinkedIn wait line carries two small buttons after its sentence. */
+.nx-wait { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-sm); }
+.nx-foot { padding: var(--gap-sm) 0; border-top: 1px solid var(--line); }
+
+/* ── Ghost pills with active-count badges ───────────────────────────────────── */
+.nx-pw { position: relative; flex: none; }
+.nx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--nx-ctl);
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.nx-pill:hover { color: var(--ink); border-color: var(--faint); background: var(--hover); }
+.nx-pill:active { transform: scale(.97); }
+.nx-pill.on { color: var(--accent-ink); border-color: var(--accent); background: var(--accent-soft); }
+.nx-pill.on .nx-ic { opacity: 1; }
+/* The saved-view name is the title of the table, so it wears no border. */
+.nx-pill.view {
+  border-color: transparent;
+  color: var(--ink);
+  font-size: var(--fs-title);
+  font-weight: 650;
+  padding-left: 6px;
+}
+.nx-pill.view:hover { background: var(--hover); }
+.nx-pill-l { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.nx-cv { opacity: .55; display: inline-flex; align-items: center; }
+.nx-cv svg { width: 12px; height: 12px; }
+.nx-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  /* Matches .count-badge in ui.css — a count is a fact, so it takes ink. */
+  background: var(--action);
+  color: var(--on-action);
+  font-size: var(--fs-overline);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Popovers reuse .omni-pop from ui.css; only the anchoring is ours. */
+.nx-pop {
+  top: calc(100% + 4px);
+  left: 0;
+  right: auto;
+  width: max-content;
+  min-width: 220px;
+  max-width: 300px;
+}
+.nx-pop-ic { display: inline-flex; color: var(--muted); }
+.nx-pop-search { margin: 2px 4px 5px; width: calc(100% - 8px); font-size: var(--fs-ui); padding: 6px 9px; }
+.nx-pop-note { padding: var(--gap-sm) 10px; font-size: var(--fs-ui); color: var(--faint); }
+.nx-back .r-name { color: var(--muted); }
+
+/* Hidden contacts popover (NC-003: moved here from Settings — HiddenNamesPanel
+   in people.js). An explicit width rather than trusting .nx-pop's own
+   `width: max-content` — that sizing rule is right for a list of short option
+   rows, but here it would shrink-wrap around a bare "Full name to hide"
+   placeholder and then jump wider the moment a long name is added. */
+.hidden-pop { width: 260px; padding: 2px 6px 6px; }
+.hidden-add-row { display: flex; gap: 6px; align-items: center; padding: 0 4px 4px; }
+.hidden-add-row .input { flex: 1; min-width: 0; height: var(--nx-ctl); font-size: var(--fs-ui); padding: 0 8px; }
+/* Hidden contacts — a compact roster, one hairline per name. Same grammar
+   Settings used (.exclude-*), moved here with the feature it belongs to. */
+.exclude-list { margin-top: 2px; display: flex; flex-direction: column; max-height: 240px; overflow-y: auto; }
+.exclude-empty { margin-top: var(--gap); }
+.exclude-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-sm);
+  min-height: var(--row-h-sm);
+  padding: 0 4px;
+  border-top: 1px solid var(--line);
+}
+.exclude-row:first-child { border-top: none; }
+.exclude-name {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  min-width: 0;
+  font-size: var(--fs-ui);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.exclude-tag {
+  font-size: var(--fs-overline);
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 1px 6px;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* Applied filters, spelled out and removable */
+.nx-chips { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 0 0 var(--gap-sm); }
+.nx-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 4px 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: var(--fs-ui);
+  white-space: nowrap;
+}
+.nx-chip-ic { display: inline-flex; opacity: .8; }
+.nx-chip-k { opacity: .75; }
+.nx-chip b { font-weight: 650; }
+.nx-chip-x {
+  border: none;
+  background: none;
+  color: inherit;
+  opacity: .6;
+  font-size: var(--fs-title);
+  line-height: 1;
+  padding: 0 4px;
+}
+.nx-chip-x:hover { opacity: 1; }
+
+/* ── Coming up: the next few personal dates (NC-040) ────────────────────────
+   Absent when nothing is upcoming, so it costs no vertical space at rest.
+   Deliberately quieter than .nx-chip: those are filters the user just applied
+   and asked to see, this is unrequested and sits above the table it must not
+   push down. Hence --panel-2 rather than --accent-soft, and the overline label
+   the rest of the app uses for "this is a heading, not content". */
+.nx-soon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 0 2px var(--gap-sm);
+}
+.nx-soon-l {
+  font-size: var(--fs-overline);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--faint);
+  font-weight: 500;
+}
+.nx-soon-i {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: var(--fs-ui);
+  font-family: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nx-soon-i.flat { cursor: default; }
+.nx-soon-i:hover:not(.flat) { border-color: var(--line-strong); background: var(--panel); }
+.nx-soon-i:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.nx-soon-i svg { opacity: .7; }
+/* The date is the reason the chip is here, so it carries the weight; the name is
+   how you recognise it. Both are content — neither may sit on --faint. */
+.nx-soon-n { font-weight: 550; }
+.nx-soon-w { color: var(--muted); }
+.nx-soon-m { font-size: var(--fs-ui); color: var(--muted); }
+
+/* ── The table ──────────────────────────────────────────────────────────────── */
+.nx-table {
+  /* One template for the header and every row, so alignment carries the eye.
+     Name · Role · Location · Topics · Last contact · Closeness. */
+  /* 128px on 'Last contact', not 116: the letterspaced header needs 125px, so
+     116 clipped its own label to 'LAST CONTAC'. Sized to the widest thing the
+     column must show — the header — rather than to the values. */
+  --nx-cols: minmax(150px, 2.2fr) minmax(110px, 1.7fr) minmax(80px, 1.1fr) minmax(100px, 1.3fr) 128px 132px;
+  /* The mark column: a 20px checkbox plus the same 7px .nx-c-person puts between
+     the avatar and the name. Reserved on every row and on the header, ALWAYS —
+     even though the checkbox itself only appears on hover. Paying 27px
+     permanently is the point: if the gutter appeared with the checkbox, every
+     row you moved the pointer across would shove its own avatar and name 27px
+     sideways, and a table of thousands of rows that twitches under the cursor is worse than
+     one that is 27px narrower. See the note on .nx-mark in ui.css for why the
+     checkbox moved out of the avatar in the first place. */
+  --nx-mark-col: 27px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.nx-head, .nx-row {
+  display: grid;
+  grid-template-columns: var(--nx-cols);
+  align-items: center;
+  gap: var(--gap);
+  /* Left padding carries the mark column. Doing it with padding rather than a
+     seventh grid column keeps the checkbox a SIBLING of the row button, which is
+     not a style choice: a <button> inside a <button> is invalid HTML and Safari
+     makes the inner one unclickable. The header takes the same padding or the
+     column labels stop lining up with their values. */
+  padding: 0 var(--gap-sm) 0 calc(var(--gap-sm) + var(--nx-mark-col));
+}
+.nx-head {
+  height: var(--nx-ctl);
+  flex: none;
+  border-bottom: 1px solid var(--line-strong);
+  font-size: var(--fs-overline);
+  font-weight: 650;
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.nx-h { display: flex; align-items: center; gap: 5px; }
+.nx-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* The table only draws the rows in view (static/app/windowing.js), and the
+     browser's scroll anchoring would fight that: it tries to keep whatever
+     element you were looking at in place when the content around it changes, so
+     every time the window swapped rows in and out it would nudge the offset and
+     the next measurement would swap a different set. Turning it off makes
+     "row n sits at n x --row-h" true without exception. NC-084. */
+  overflow-anchor: none;
+}
+
+/* The two spacers that stand in for the rows outside the window — one above the
+   drawn rows, one below. Nothing but height: they exist so the scrollbar is the
+   length of the whole list and row n still begins at exactly n x --row-h. No
+   border and no background, or they would read as a giant empty row. Their
+   heights are computed in pixels and set inline; there is no CSS for "a few
+   thousand rows tall". */
+.nx-pad { flex: none; }
+.nx-row {
+  width: 100%;
+  height: var(--row-h);
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font: inherit;
+  color: inherit;
+}
+.nx-row:hover { background: var(--hover); }
+.nx-row.active { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.nx-row:focus-visible, .nx-pill:focus-visible, .nx-chip-x:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* Cells: one type size, one line, ellipsis. Weight and colour do the work. */
+.nx-c {
+  min-width: 0;
+  font-size: var(--fs-ui);
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nx-c-person { display: flex; align-items: center; gap: 7px; }
+/* The `.nx-c-person .cat-dot { 6px }` override that sat here is gone with the dot
+   itself — see the note in people.js's person cell. .cat-dot keeps its 8px base in
+   ui.css for the category picker on the person page, which is now its only caller. */
+.nx-name { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "~" — this row came from meaning, not from a keyword hit. */
+.nx-hint { flex: none; color: var(--gold); font-weight: 700; }
+/* THE detail that matters most: an empty cell says what is missing. Most
+   people have no history at all, so blankness would hide the product. */
+.nx-none { color: var(--faint); }
+.nx-c-topics { display: flex; align-items: center; gap: 5px; overflow: hidden; }
+.nx-c-topics .tag {
+  font-size: var(--fs-overline); padding: 1px 7px;
+  /* This column is ~185px, and one long topic name ('renewable energy
+     storage') can fill most of it on its own, so something has to give. Pills
+     shrink and end in an ellipsis: a signalled truncation reads as deliberate,
+     where the column's overflow cutting a pill mid-letter reads as a rendering
+     bug.
+     inline-block, not the base .tag's inline-flex, because text-overflow has
+     no effect on a flex container's text — safe here since topic pills and the
+     +N pill are text-only, with no icon child. */
+  display: inline-block; flex: 0 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The count must never be the thing that gets truncated — it is the only
+   signal that anything is hidden, so it holds its width and the topic pills
+   yield to it. */
+.nx-c-topics .tag-more { flex: 0 0 auto; color: var(--faint); }
+
+/* Last contact — relative, and coloured by the staleness ramp. */
+.nx-c-last { font-weight: 600; font-variant-numeric: tabular-nums; }
+.nx-c-last.s-fresh { color: var(--stale-fresh); }
+.nx-c-last.s-warm { color: var(--stale-warm); }
+.nx-c-last.s-cool { color: var(--stale-cool); }
+.nx-c-last.s-cold { color: var(--stale-cold); }
+.nx-c-last .nx-none { font-weight: 400; }
+
+/* Closeness — dot + humanised label + the score. */
+.nx-c-strength { display: flex; align-items: center; gap: 6px; }
+.nx-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.nx-str { color: var(--ink); font-weight: 550; }
+.nx-score { margin-left: auto; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+/* Column icons: 16px box, 1.5px stroke, currentColor */
+.nx-ic {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .7;
+}
+
+/* The rail variant: name and last contact only, closeness on the avatar ring.
+   128px, matching the other two templates — at 92px the letterspaced header
+   clipped to 'LAST CON', the same defect as the full-width table. It costs the
+   name column ~36px of a 340px rail, which is the right trade: the rail exists
+   to switch between people, and the full name is already in the pane beside it. */
+.nx-people.split .nx-table { --nx-cols: minmax(0, 1fr) 128px; }
+.nx-people.split .nx-c-role,
+.nx-people.split .nx-c-loc,
+.nx-people.split .nx-c-topics,
+.nx-people.split .nx-c-strength { display: none; }
+.nx-people.split .nx-pill.view { font-size: var(--fs-ui); }
+/* In the rail the toolbar wraps, so nothing should be pushed to the far edge. */
+.nx-people.split .nx-spacer { display: none; }
+
+/* ── Add someone — a popover off the toolbar, replacing window.prompt ──────────── */
+.add-pop {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 60;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow-lift);
+}
+.add-pop-foot { display: flex; justify-content: flex-end; gap: 7px; }
+.add-dup { font-size: var(--fs-ui); color: var(--muted); }
+.add-dup-acts { display: flex; gap: 7px; margin-top: 5px; }
+
+/* ── Next-action card content (shell .next-card / .next-tag live in ui.css) ─── */
+.next-card .next-line { margin-top: 8px; font-size: var(--fs-ui); color: var(--ink); line-height: var(--lh-body); }
+/* .next-ch removed: NextCard no longer wraps the channel label in its own span,
+   so the rule selected nothing in any view. */
+.next-card .next-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ── Timeline: per-message clamp + "Show more" ─────────────────────────────── */
+.msg .m-body { display: block; }
+.msg .m-body.clamp {
+  display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.msg .m-more {
+  display: block; border: none; background: none; padding: 3px 0 0;
+  font-size: var(--fs-overline); font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.msg .m-more:hover { text-decoration: underline; }
+
+/* ── Narrow screens ────────────────────────────────────────────────────────────
+   Below 900px the table drops its two widest metadata columns; below 700px the
+   split view stacks, and the intelligence columns are the ones that survive. */
+@media (max-width: 900px) {
+  /* 128px here too — same 'LAST CONTAC' clip, and 100px was worse. */
+  .nx-table { --nx-cols: minmax(140px, 2fr) minmax(100px, 1.4fr) 128px 124px; }
+  .nx-c-loc, .nx-c-topics { display: none; }
+}
+@media (max-width: 700px) {
+  .nx-people, .nx-people.split { flex-direction: column; height: auto; }
+  .nx-list, .nx-people.split .nx-list {
+    width: 100%;
+    flex: none;
+    border-right: none;
+    padding: var(--gap-sm) var(--gap) 0;
+  }
+  .nx-body { max-height: 46vh; }
+  .nx-detail { padding: var(--gap) var(--gap) 60px; overflow: visible; }
+  /* 128px, not 92 — the fourth and last place the letterspaced 'LAST CONTACT'
+     header needed 125px and was given less, clipping to 'LAST CON'. */
+  .nx-table, .nx-people.split .nx-table { --nx-cols: minmax(0, 1fr) 128px; }
+  .nx-c-role, .nx-c-strength { display: none; }
+}
+
+/* .dup-box removed: nothing in any view has used the class since the add-duplicate
+   box was restyled, and its own comment documented it as dead while leaving the
+   rule in place. The bug it recorded is worth keeping though — the box originally
+   set `border: 1px solid var(--border)`, and --border has never existed in
+   tokens.css, so it rendered with no border at all. That is the failure mode an
+   undefined custom property has: silence, not an error. */

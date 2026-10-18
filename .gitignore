@@ -1,0 +1,42 @@
+# ── Private folders — never commit ──────────────────────────────────────────
+# .env, gmail credential/token json (chmod 700)
+# No trailing slash, for the same reason as /data below: secrets/ may be a
+# symlink, and `/secrets/` matches only a real directory.
+/secrets
+# The data folder: databases, photos, search vectors, exclude list.
+# No trailing slash on purpose: data/ may be a SYMLINK to the packaged app's data
+# home under ~/Library/Application Support/NetworkCRM. `/data/` only matches a
+# directory, so a symlink would show up as untracked — one blanket `git add` from
+# committing an absolute path into someone's home dir, dangling on every other
+# machine.
+/data
+
+# ── Safety nets — even if a private file lands outside the folders above ─────
+.env
+*.db
+*.db-wal
+*.db-shm
+*.npz
+*.mbox
+Connections*.csv
+exclude_list.txt
+imessage_unmatched.csv
+gmail_credentials_*.json
+gmail_token_*.json
+# The file Google hands out before it is renamed (NC-288).
+client_secret_*.json
+
+# ── Python / macOS ──────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+
+# ── Packaging build output — regenerate with packaging/appify.sh ────────────
+packaging/dist/
+
+# ── Editor / tool config ─────────────────────────────────────────────────────
+.claude/settings.local.json
+
+# Generated code-graph output (derived: regenerate it, do not commit it)
+graphify-out/

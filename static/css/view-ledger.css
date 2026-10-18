@@ -1,0 +1,250 @@
+/* The shared parts of the rebuilt Data and Settings pages (NC-088, NC-114).
+   static/app/ledger.js builds them; this file is their only stylesheet, so the
+   two pages cannot drift apart in how a row looks. Prefix `lg-`, because the
+   current Data page's `ledger-` and `src-` rows are on screen in the same app
+   until the old pages are deleted.
+
+   One colour vocabulary, meaning one thing:
+     state  (.lg-dot)   the app's own green / gold / red for working, falling
+                        behind and stopped — the colours the current page's
+                        source ledger already uses for the same three words
+   The effort chip (.lg-cost) is words only. It had the staleness ramp as a
+   coloured dot, and four green "free" dots on a fresh install read as four
+   sources working (NC-230).
+   Nothing else on these pages is coloured. --accent stays interaction only. */
+
+.lg-page { max-width: 1480px; }
+
+.lg-preview {
+  font-size: var(--fs-ui); color: var(--muted); line-height: var(--lh-body);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 6px 10px;
+  margin: 0 0 calc(var(--gap) * 2); max-width: 80ch;
+}
+
+/* ── Section ──────────────────────────────────────────────────────────────── */
+.lg-section { margin: 0 0 calc(var(--gap) * 3); }
+.lg-section-head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; }
+.lg-section-title {
+  font-size: var(--fs-title); font-weight: 620; color: var(--ink);
+  letter-spacing: -.005em; margin: 0;
+}
+.lg-section-n {
+  font-size: var(--fs-ui); color: var(--faint); font-variant-numeric: tabular-nums;
+}
+.lg-section-note {
+  font-size: var(--fs-ui); color: var(--muted); line-height: var(--lh-body);
+  margin: 0 0 10px; max-width: 70ch;
+}
+.lg-quiet { font-size: var(--fs-ui); color: var(--muted); margin: 0; line-height: var(--lh-body); }
+.lg-quiet b { color: var(--ink); font-weight: 600; }
+.lg-scanning { font-size: var(--fs-ui); color: var(--faint); margin: 6px 0 0; }
+/* The file check failed or never answered (NC-236, from the old page's .data-warn). */
+.lg-scan-failed { font-size: var(--fs-ui); color: var(--stale-warm); line-height: var(--lh-body);
+  margin: 6px 0 0; max-width: 70ch; }
+/* An import started from Needs you keeps its result here after its need goes. */
+.lg-ran {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 10px 12px; margin: 0 0 10px;
+  border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel-2);
+}
+.lg-ran-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  font-size: var(--fs-ui); color: var(--ink); }
+
+/* ── The two dots ─────────────────────────────────────────────────────────── */
+.lg-dot {
+  display: inline-block; flex: none;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--faint);
+}
+.lg-dot.is-ok      { background: var(--green); }
+.lg-dot.is-behind  { background: var(--gold); }
+.lg-dot.is-blocked { background: var(--red); }
+.lg-dot.is-paused  { background: var(--faint); }
+.lg-dot.is-ready   { background: var(--ink); }
+.lg-dot.is-off,
+.lg-dot.is-na      { background: none; box-shadow: inset 0 0 0 1.5px var(--line-strong); }
+
+.lg-cost {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  font-family: var(--mono); font-size: var(--fs-overline); letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted);
+}
+/* NC-231: the three passes inside the "Worked out on this Mac" row. */
+.lg-parts { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.lg-parts b { font-weight: 600; }
+/* NC-228: possible duplicates, in This install. */
+.lg-dups { display: flex; flex-direction: column; gap: 8px; }
+.lg-dup-list { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── LedgerRow ─────────────────────────────────────────────────────────────
+   One template, shared by the column heads and every row head, redefined at
+   each width so the two can never disagree. Columns:
+     lead · name · gives · have · takes · cost · chevron
+   and they fold in a fixed order (tested at 1400 / 1100 / 900px):
+     below 1400  "gives" moves under the name
+     below 1100  "takes" moves under "have"
+     below  900  one column: name, then have, with cost beside the name */
+.lg-list { --lg-cols: 30px minmax(13ch, 16ch) minmax(0, 1.25fr) minmax(0, 1.1fr) minmax(0, 1.25fr) 15ch 16px; }
+.lg-cols,
+.lg-row-head {
+  display: grid; grid-template-columns: var(--lg-cols);
+  column-gap: 14px; align-items: start;
+}
+.lg-cols {
+  padding: 0 6px 6px;
+  border-bottom: 1px solid var(--line-strong);
+  font-family: var(--mono); font-size: var(--fs-overline); letter-spacing: var(--ls-overline);
+  text-transform: uppercase; color: var(--faint); font-weight: 500;
+}
+.lg-row { border-bottom: 1px solid var(--line); }
+.lg-row-head {
+  width: 100%; margin: 0; padding: 10px 6px;
+  background: none; border: 0; border-radius: var(--radius-sm);
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  font-size: var(--fs-ui); line-height: 1.45;
+}
+.lg-row-head:hover { background: var(--hover); }
+.lg-row-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.lg-row.is-open .lg-row-head { background: var(--panel-2); }
+
+.lg-lead { display: flex; align-items: center; gap: 6px; padding-top: 1px; }
+.lg-lead .lg-dot { margin-top: 0; }
+.lg-ic { color: var(--muted); }
+.lg-name { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lg-name-text { color: var(--ink); font-weight: 600; }
+.lg-gives, .lg-takes { color: var(--muted); }
+.lg-have { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lg-have-text { color: var(--ink); font-variant-numeric: tabular-nums; }
+.lg-have-text.is-empty { color: var(--faint); }
+.lg-note { font-size: var(--fs-ui); }
+.lg-note.is-blocked { color: var(--red); }
+.lg-note.is-behind  { color: var(--gold); }
+.lg-note.is-paused,
+.lg-note.is-na      { color: var(--muted); }
+.lg-cost-cell { padding-top: 2px; }
+.lg-chev { color: var(--faint); margin-top: 2px; }
+
+/* The folded copies of "gives" and "takes" exist only for the narrower widths. */
+.lg-gives-folded, .lg-takes-folded { display: none; }
+.lg-fold-label {
+  font-family: var(--mono); font-size: var(--fs-overline); letter-spacing: var(--ls-overline);
+  text-transform: uppercase; color: var(--faint);
+}
+
+@media (max-width: 1399px) {
+  .lg-list { --lg-cols: 30px minmax(18ch, 1.3fr) minmax(0, 1.1fr) minmax(0, 1.25fr) 15ch 16px; }
+  .lg-gives-col { display: none; }
+  .lg-gives-folded { display: block; }
+}
+@media (max-width: 1099px) {
+  .lg-list { --lg-cols: 30px minmax(18ch, 1.2fr) minmax(0, 1.2fr) 15ch 16px; }
+  .lg-takes-col { display: none; }
+  .lg-takes-folded { display: block; }
+}
+@media (max-width: 899px) {
+  .lg-cols { display: none; }
+  .lg-list { --lg-cols: 30px minmax(0, 1fr) auto 16px; }
+  .lg-row-head { row-gap: 4px; }
+  .lg-lead     { grid-column: 1; grid-row: 1; }
+  .lg-name     { grid-column: 2; grid-row: 1; }
+  .lg-cost-cell { grid-column: 3; grid-row: 1; }
+  .lg-chev     { grid-column: 4; grid-row: 1; }
+  .lg-have     { grid-column: 2 / 4; grid-row: 2; }
+}
+
+/* ── RowDetail ────────────────────────────────────────────────────────────── */
+.lg-row-body { padding: 4px 6px 18px 50px; }
+.lg-detail { display: flex; flex-direction: column; gap: 14px; max-width: 92ch; }
+.lg-block { display: flex; flex-direction: column; gap: 6px; }
+.lg-block-title {
+  font-family: var(--mono); font-size: var(--fs-overline); letter-spacing: var(--ls-overline);
+  text-transform: uppercase; color: var(--faint); font-weight: 500; margin: 0;
+}
+.lg-block-body { font-size: var(--fs-ui); color: var(--muted); line-height: var(--lh-body); }
+.lg-block-body p { margin: 0; max-width: 72ch; }
+.lg-acts { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lg-embed { flex-basis: 100%; }
+@media (max-width: 899px) { .lg-row-body { padding-left: 6px; } }
+
+/* ── Leaf controls ────────────────────────────────────────────────────────── */
+.lg-import { display: flex; flex-direction: column; gap: 8px; flex-basis: 100%; }
+.lg-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.lg-path {
+  font-family: var(--mono); font-size: var(--fs-ui); color: var(--muted);
+  max-width: 48ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lg-path-says { font-size: var(--fs-ui); color: var(--muted); }
+.lg-switch-act { display: inline-flex; align-items: center; gap: 8px; }
+.lg-switch-label { font-size: var(--fs-ui); color: var(--ink); font-weight: 600; }
+.lg-how-fold > summary {
+  cursor: pointer; font-size: var(--fs-ui); color: var(--muted); width: max-content;
+}
+.lg-how-fold > summary:hover { color: var(--ink); }
+.lg-how-fold[open] > summary { margin-bottom: 8px; }
+.lg-cred { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; flex-basis: 100%; }
+.lg-cred-label { color: var(--ink); font-weight: 600; font-size: var(--fs-ui); min-width: 12ch; }
+.lg-cred-input {
+  height: var(--ctl-h); width: min(40ch, 100%);
+  padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+  background: var(--panel); color: var(--ink);
+  font-family: var(--mono); font-size: var(--fs-ui);
+}
+.lg-cred-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lg-cred-masked {
+  font-family: var(--mono); font-size: var(--fs-ui); color: var(--muted);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-pill); padding: 2px 6px;
+}
+.lg-cred-note { flex-basis: 100%; }
+/* NC-327: the spending-limit hint under the Anthropic key box. */
+.lg-cred-hint {
+  flex-basis: 100%; margin: 0; max-width: 66ch;
+  font-size: var(--fs-ui); color: var(--muted); line-height: var(--lh-body);
+}
+.lg-figure b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── NeedsRow ─────────────────────────────────────────────────────────────── */
+.lg-needs { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.lg-need {
+  display: grid; grid-template-columns: 12px minmax(0, 1fr) auto;
+  column-gap: 12px; row-gap: 8px; align-items: start;
+  padding: 10px 6px; border-bottom: 1px solid var(--line);
+}
+.lg-need .lg-dot { margin-top: 5px; }
+.lg-need-says { margin: 0; font-size: var(--fs-ui); color: var(--ink); line-height: var(--lh-body); max-width: 78ch; }
+.lg-need-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; }
+.lg-need-acts .lg-import { flex-basis: auto; align-items: flex-end; }
+@media (max-width: 1099px) {
+  .lg-need-acts { grid-column: 2 / 4; justify-content: flex-start; }
+  .lg-need-acts .lg-import { align-items: flex-start; }
+}
+
+/* ── This install ─────────────────────────────────────────────────────────── */
+.lg-install { display: flex; flex-direction: column; gap: 10px; }
+.lg-status {
+  display: grid; grid-template-columns: 16ch minmax(0, 1fr);
+  column-gap: 14px; row-gap: 2px; font-size: var(--fs-ui);
+}
+.lg-status-label {
+  font-family: var(--mono); font-size: var(--fs-overline); letter-spacing: var(--ls-overline);
+  text-transform: uppercase; color: var(--faint); padding-top: 2px;
+}
+.lg-status-value { color: var(--ink); }
+.lg-status-value b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.lg-status-detail {
+  grid-column: 2; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.lg-export { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 4px; }
+.lg-export .lg-status-label { min-width: 16ch; }
+.lg-export-note { font-size: var(--fs-ui); color: var(--muted); }
+.lg-install-foot { font-size: var(--fs-ui); color: var(--muted); margin: 4px 0 0; }
+@media (max-width: 899px) {
+  .lg-status { grid-template-columns: 1fr; }
+  .lg-status-detail { grid-column: 1; }
+}
+
+/* ── Switch ───────────────────────────────────────────────────────────────── */
+.lg-switch { display: inline-flex; gap: 0; }
+.lg-switch .btn:first-child { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.lg-switch .btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-left: -1px; }

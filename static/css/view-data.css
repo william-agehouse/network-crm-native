@@ -1,0 +1,707 @@
+/* ── What the Data page's parts still need from the old page's stylesheet ────
+   The Data and Settings pages were rebuilt (NC-088, NC-114) and styled in
+   view-ledger.css under the lg- prefix. The old pages were deleted (NC-236),
+   and so were the rules only they could match (every class no remaining page
+   renders).
+
+   What is left is used by parts that outlived the old pages:
+     .data-view / .data-title / .data-sub    the frame both rebuilt pages sit in
+     .src-help / .src-steps                  a source's instructions (ledger.js
+                                             Help, onboarding.js, fda.js)
+     .src-row / .src-icon / .src-name …      onboarding.js's rows
+     .prov-*                                 what a source added (data.js)
+     .run-result / .verb-chip / .src-log     an import's result (data.js)
+     .dup-*                                  a group of possible duplicates
+     .fda-*                                  the helper's panel (fda.js)
+     .setup-* / .gm-*                        Gmail's setup (gmail.js)
+
+   Loaded after ui.css (index.html), so it is the current word on the
+   selectors it names. Every value comes from tokens.css. */
+
+/* ── Page frame ──────────────────────────────────────────────────────────── */
+.data-view {
+  /* icon column width — also what the note lines and the expanded body indent
+     to, so name, instructions and log all share one left edge */
+  --src-gutter: 24px;
+  /* That left edge, once, for everything that hangs off it. */
+  --src-indent: calc(var(--src-gutter) + var(--gap-sm) * 2);
+  max-width: 860px;
+  margin: 0 auto;
+  padding: var(--pad-view) var(--pad-view) 80px;
+  font-size: var(--fs-ui);
+}
+.data-view .data-title {
+  font-family: var(--sans);         /* the display serif leaves the chrome */
+  font-size: var(--fs-page);
+  font-weight: 620;
+  letter-spacing: -.015em;
+  line-height: var(--lh-tight);
+  margin: 0 0 2px;
+}
+.data-view .data-sub {
+  color: var(--muted);
+  font-size: var(--fs-ui);
+  line-height: var(--lh-body);
+  margin: 0 0 calc(var(--gap) * 2);
+  max-width: 62ch;
+}
+
+/* ── Groups: an overline, a hairline, then rows ─────────────────────────────
+   Space between groups is the page's coarsest hierarchy signal, so it is a
+   whole step wider than the space inside one. */
+.data-view .section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  font-size: var(--fs-overline);
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--faint);
+  margin: 0;
+  padding: 0 var(--gap-sm) var(--gap-sm);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Collapsible groups ("Add a source", "Upkeep") wear the same overline, with a
+   disclosure triangle in front of it. A real <button>, not a <summary>: the
+   rows inside mount and unmount with the open state. */
+.data-view button.section-label {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  user-select: none;
+}
+.data-view button.section-label:hover { color: var(--muted); }
+.data-view button.section-label:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-pill);
+}
+
+/* ── The row ─────────────────────────────────────────────────────────────── */
+.src-row { border-bottom: 1px solid var(--line); }
+
+.data-view .src-icon {
+  width: var(--src-gutter);
+  flex: none;
+  /* --fs-ui, not --fs-title: the icon column was the page's fifth type size,
+     and a source glyph is not a heading. */
+  font-size: var(--fs-ui);
+  line-height: 1;
+  text-align: left;
+}
+.data-view .src-name {
+  flex: none;
+  max-width: 42%;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* .btn.mini is the one control in the family at weight 550. Inside this view it
+   joins the other buttons at 600 — the page holds itself to two weights. */
+.data-view .btn.mini { font-weight: 600; }
+
+/* ── NC-037: "what it brought" ───────────────────────────────────────────────
+   The one control every row gets, and the panel it opens. Two rules govern the
+   whole thing:
+
+   IT IS A REPORT, NOT AN ACTION. NC-036 made a row's job to report, not to
+   ask, so this cannot look like the thing next to it that runs an importer.
+   It therefore takes the micro-label grammar this page already has for a
+   disclosure (11px/650 caps in --faint, same as .src-extra > summary and
+   .log-details summary) rather than a .btn. That adds no type step, no colour,
+   and nothing about it reads as "press me and something changes".
+
+   A DISCLOSURE CANNOT LIVE INSIDE A DISCLOSURE. Most rows here ARE a <button>
+   (the chevron opens the import wizard), and a button inside a button is
+   invalid markup that browsers silently unnest. So .src-head-wrap puts the two
+   side by side and SrcHead only emits it when a row asks for an aside — a row
+   without one keeps the DOM it always had, which matters because onboarding.js
+   styles itself off these same .src-* classes. */
+
+/* The panel. Indented to the same text column as .src-body and .src-note, so an
+   open report lines up with everything else a row can open. */
+.data-view .prov {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+  padding: var(--gap-sm) var(--gap-sm) var(--gap) var(--src-indent);
+}
+.data-view .prov-kind {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.data-view .prov-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+}
+/* What the number is. --muted at 400: the number is the figure, not the label. */
+.data-view .prov-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--muted);
+}
+/* WEIGHT, NOT COLOUR, marks a soft number. A count the column can answer
+   exactly is ink at 600; one that is only the current winner, only the record's
+   creator, or shared with another importer stays muted at 400 with the reason
+   spelled out underneath. Colour on this page belongs to the staleness ramp
+   (DESIGN_DIRECTION §6) and "approximate" is not a tier on it. */
+.data-view .prov-count {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.data-view .prov-count.firm {
+  color: var(--ink);
+  font-weight: 600;
+}
+/* The denominator and the breakdown — decoration tier, so --faint is correct
+   here: neither carries meaning the line does not already state. */
+.data-view .prov-of,
+.data-view .prov-detail {
+  flex: none;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+/* What the number does not mean. Always visible, never behind a disclosure:
+   hiding the caveat is what would make this panel dishonest. */
+.data-view .prov-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: var(--lh-body);
+  max-width: 74ch;
+}
+
+/* ── A fold's label: an import's log, Gmail's setup steps ───────────────────
+   Micro-label grammar, one step quieter than a group label, with the UA's own
+   triangle. */
+
+.gm-steps-block > summary,
+.log-details summary {
+  font-size: var(--fs-overline);
+  font-weight: 650;
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  color: var(--faint);
+  cursor: pointer;
+  user-select: none;
+  width: max-content;
+}
+
+.gm-steps-block > summary:hover,
+.log-details summary:hover { color: var(--muted); }
+
+.gm-steps-block > summary:focus-visible,
+.log-details summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-pill);
+}
+.log-details[open] summary { margin-bottom: var(--gap-sm); }
+
+/* Kept for onboarding.js, which stacks name + status inside .grow. */
+.src-status { font-size: var(--fs-ui); color: var(--muted); }
+.src-status.ok { color: var(--green); }
+
+/* ── The expanded body ───────────────────────────────────────────────────── */
+.src-help {
+  font-size: var(--fs-ui);
+  color: var(--muted);
+  line-height: var(--lh-body);
+  max-width: 74ch;
+}
+.src-help > * + * { margin-top: var(--gap); }   /* prose block ↔ step list */
+/* The importers write their help in markdown, so **bold** arrives as a <b> at
+   the UA's 700. Inside this page's two weights that is a third one, for
+   emphasis the surrounding --muted prose already gives it. */
+.src-help b,
+.src-help strong { font-weight: 600; }
+.src-help .md p { margin: 0 0 var(--gap-sm); }
+.src-help .md p:last-child { margin: 0; }
+.src-help ul { margin: var(--gap-sm) 0; padding-left: 18px; }
+.src-help li { margin-bottom: 4px; }
+.src-help code {
+  font-family: var(--mono);
+  font-size: var(--fs-overline);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 1px 5px;
+  user-select: all;
+}
+/* Import instructions are a procedure, so they are laid out as one: numbered
+   steps, one instruction per line, digits in their own column. The text itself
+   comes from importers.REGISTRY — this only changes how it reads. */
+.src-help .src-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.src-help .src-steps li {
+  counter-increment: step;
+  display: flex;
+  gap: var(--gap-sm);
+  margin: 0;
+}
+.src-help .src-steps li::before {
+  content: counter(step);
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--fs-overline);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.src-help .src-steps li .md p { margin: 0; }
+
+.src-run {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.src-path {
+  font-family: var(--mono);
+  font-size: var(--fs-overline);
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Run result: verb-count chips, the raw log behind a disclosure ──────────
+   The receipt is the page's whole claim to honesty (crm/ics_import.report):
+   every count an importer reported, including what it refused, and the raw log
+   one click under it. */
+.run-result {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-sm);
+  padding: 0 var(--gap-sm) var(--gap) var(--src-indent);
+}
+.run-result .bridge { align-self: flex-start; }
+.verb-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.verb-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--panel-2);
+  padding: 3px 8px;
+  font-size: var(--fs-ui);
+  color: var(--muted);
+}
+.verb-chip b {
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.src-log {
+  font-family: var(--mono);
+  font-size: var(--fs-overline);
+  line-height: var(--lh-body);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: var(--gap-sm) var(--gap);
+  max-height: 200px;
+  overflow-y: auto;
+  margin: 0;
+  color: var(--muted);
+}
+.src-log.ok { border-left-color: var(--green); }
+.src-log.err {
+  border-left-color: var(--danger);
+  background: var(--red-soft);
+  color: var(--ink);
+}
+
+/* ── Gentle validation ───────────────────────────────────────────────────────
+   A soft border and ONE short sentence. The control stays usable and the
+   submit button stays enabled: the server is the judge of a valid value, so a
+   client-side warning informs, it never blocks. */
+.soft-invalid,
+.input.soft-invalid {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+  background: color-mix(in srgb, var(--red-soft) 40%, var(--panel));
+}
+.input.soft-invalid:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red-soft) 65%, transparent);
+}
+.field-note {
+  font-size: var(--fs-ui);
+  color: var(--danger);
+  line-height: var(--lh-body);
+  margin-top: 6px;
+}
+
+/* ── Duplicate groups ────────────────────────────────────────────────────── */
+.dup-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px var(--gap);
+  margin-bottom: var(--gap-sm);
+  background: var(--panel);
+}
+.dup-opt {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  min-height: var(--row-h);
+  padding: 2px 0;
+  cursor: pointer;
+}
+.dup-opt + .dup-opt { border-top: 1px solid var(--line); }
+.dup-opt .grow { flex: 1; min-width: 0; }
+.dup-name {
+  font-weight: 600;
+  font-size: var(--fs-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dup-meta {
+  font-size: var(--fs-ui);
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dup-foot {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--gap-sm) 0;
+  border-top: 1px solid var(--line);
+}
+.dup-ask {
+  flex: 1;
+  font-size: var(--fs-ui);
+  color: var(--muted);
+  line-height: var(--lh-body);
+}
+
+/* ── The Full Disk Access panel (static/app/fda.js) ─────────────────────────
+   The one permission the app depends on and cannot ask for, so this is the one
+   place in the UI that has to carry a whole procedure rather than a control.
+
+   Two decisions worth stating, both from docs/DESIGN_DIRECTION.md §6:
+
+   · --red, not the staleness ramp. "macOS is refusing to let me read your
+     messages" is a fault, not an age, and the ramp means age everywhere else in
+     this app. Reusing it here would have taught it a second meaning.
+   · The buttons are --action ink like every other button (.btn.primary), because
+     the panel is not the system responding to you — it is a thing to do. --accent
+     stays reserved for interaction feedback.
+
+   Numbered steps reuse .src-help .src-steps from the import rows above rather
+   than restyling a list: it is the same kind of object (a procedure macOS makes
+   you follow), and one counter style for both is the point. */
+.fda-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--gap);
+  margin-bottom: var(--gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+/* A left edge, not a tinted fill: the panel carries three paragraphs and a code
+   path, and a red wash behind that much text reads as an error dialog. */
+.fda-panel:not(.is-offer) { border-left: 2px solid var(--red); }
+
+.fda-head { display: flex; gap: var(--gap); align-items: flex-start; }
+.fda-head-ic { flex: none; margin-top: 2px; color: var(--muted); }
+.fda-panel:not(.is-offer) .fda-head-ic { color: var(--red); }
+.fda-head-text { min-width: 0; }
+.fda-head-text :is(h2, h4) {
+  margin: 0 0 4px;
+  font-family: var(--sans);
+  font-size: var(--fs-title);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: var(--lh-tight);
+}
+.fda-head-text p {
+  margin: 0;
+  font-size: var(--fs-ui);
+  line-height: var(--lh-body);
+  color: var(--muted);
+  max-width: 74ch;
+}
+.fda-head-text b { font-weight: 600; color: var(--ink); }
+
+/* Per-source truth, from the helper's own report. The dot is a repeat of the
+   words beside it, never the only carrier of the state. */
+.fda-sources {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.fda-src {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  font-size: var(--fs-ui);
+  color: var(--muted);
+  padding: 4px 0;
+}
+.fda-src .ic { flex: none; color: var(--faint); }
+.fda-src-name { font-weight: 600; color: var(--ink); min-width: 78px; }
+.fda-src.is-ok .ic { color: var(--green); }
+.fda-src.is-blocked .ic { color: var(--red); }
+.fda-src.is-blocked .fda-src-state { color: var(--red); }
+
+.fda-actions { display: flex; gap: var(--gap-sm); flex-wrap: wrap; }
+/* NC-187: the off switch's second step, the sentence and its two buttons. */
+.fda-off-confirm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-sm);
+  min-width: 0;
+}
+.fda-foot {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: center;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: var(--gap);
+}
+.fda-stamp { font-size: var(--fs-overline); color: var(--faint); }
+.fda-fine {
+  margin: 0;
+  font-size: var(--fs-overline);
+  line-height: var(--lh-body);
+  color: var(--faint);
+  max-width: 74ch;
+}
+
+/* The path is the load-bearing string in the whole flow — it is what the user
+   drags into System Settings — so it gets the full width it needs and a button
+   that puts it on the clipboard. */
+.fda-path-row {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+/* .src-path elsewhere is a one-line chip that ellipsises a long filename, and
+   that is right there: the name is a label. Here the string IS the instruction —
+   it is what the user drags into System Settings or pastes into Cmd+Shift+G — so
+   it wraps to as many lines as it needs instead of ending in "…". */
+.fda-path-row .src-path {
+  max-width: 100%;
+  user-select: all;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: var(--lh-body);
+}
+/* Step 2 holds a block, not one line: .src-steps li is a flex row (digit | text),
+   so its content stacks inside one wrapper rather than becoming a second flex
+   item beside the digit. */
+.fda-step-block { flex: 1 1 auto; min-width: 0; }
+
+.fda-output {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: var(--fs-overline);
+  line-height: var(--lh-body);
+  color: var(--muted);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--gap-sm);
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+/* Working, or quiet: one row. "It is fine" earns a line, not a panel. */
+.fda-line {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: var(--gap-sm) var(--gap);
+  margin-bottom: var(--gap);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  font-size: var(--fs-ui);
+  color: var(--muted);
+}
+.fda-line-text { flex: 1 1 auto; min-width: 0; }
+
+/* The per-source file counts under the healthy line. Quiet on purpose — it is a
+   number you check, not a number you read every time. NC-093. */
+.fda-line-read {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-overline);
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+.fda-line.is-ok .ic { color: var(--green); flex: none; }
+.fda-line.is-warn .ic { color: var(--gold); flex: none; }
+
+@media (max-width: 760px) {
+  .fda-src-name { min-width: 0; }
+  .fda-line { flex-wrap: wrap; }
+}
+
+/* Narrow screens.
+
+   These rules were first written into view-settings.css and are moved here,
+   which is where they belong because each view keeps its styles in its own file:
+   view-data.css had no @media block at all, so the Data page's entire mobile
+   layout was living in the Settings stylesheet.
+
+   Name and control stay on line one; what-it-needs and the state drop to line
+   two. Coverage is the one column that goes — it is the least actionable. */
+@media (max-width: 760px) {
+  .data-view { padding: var(--gap) var(--gap) 60px; }
+  .data-view .src-icon  { order: 1; }
+  .data-view .src-name  { order: 2; flex: 1 1 auto; max-width: none; }
+  
+  .data-view .prov { padding-left: var(--gap-sm); }
+}
+
+/* ── Setup steps, fine print and an action row (Gmail's setup, gmail.js) ───── */
+
+/* NC-117 added these neutral names so Gmail's setup and the LinkedIn panel
+   could share them. The LinkedIn panel went with the old Data page (NC-236). */
+.setup-actions {
+  display: flex; gap: var(--gap-sm); align-items: center; flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: var(--gap);
+}
+.setup-fine { font-size: var(--fs-overline); color: var(--faint); }
+.setup-fine { margin: 6px 0 0; line-height: var(--lh-body); }
+.setup-label {
+  display: block; font-size: var(--fs-overline); color: var(--muted);
+  margin-bottom: 4px;
+}
+
+/* NC-079: the numbered steps. Real <ol> markers, because the order is the
+   information. Left-aligned numbers and a
+   hanging indent so the bold lead-in of each step starts on one vertical line and
+   the list can be scanned for "which step was I on". */
+.setup-steps {
+  margin: var(--gap) 0 0; padding-left: 1.35em;
+  display: flex; flex-direction: column; gap: 6px;
+  font-size: var(--fs-ui); color: var(--muted); line-height: 1.5;
+}
+.setup-steps li { padding-left: 2px; }
+.setup-steps b { color: var(--ink); font-weight: 600; }
+.setup-steps code {
+  font-family: var(--mono); font-size: .92em;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm); padding: 0 4px;
+}
+
+/* ── NC-117: Gmail's setup, inside the Gmail source row ────────────────────── */
+.gm-setup {
+  display: flex; flex-direction: column; gap: var(--gap);
+  margin: var(--gap) 0;
+}
+.gm-account {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: var(--gap-sm) var(--gap);
+  display: flex; flex-direction: column; gap: var(--gap-sm);
+}
+.gm-account-head { display: flex; align-items: center; gap: var(--gap-sm); }
+.gm-account-name {
+  font-family: var(--mono); font-size: var(--fs-ui); color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.gm-account-says {
+  margin-left: auto; font-size: var(--fs-overline); color: var(--muted);
+  white-space: nowrap;
+}
+/* The same three-state dot the source ledger uses, for the same reason: state
+   has to read at a glance, before any of the words. */
+.gm-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex: none;
+  background: var(--faint);
+}
+.gm-account.is-warn .gm-dot { background: var(--gold); }
+.gm-account.is-ok   .gm-dot { background: var(--green); }
+.gm-account.is-warn .gm-account-says { color: var(--gold); }
+.gm-account.is-ok   .gm-account-says { color: var(--green); }
+/* The action row inside an account has nothing above it to be divided from. */
+.gm-account .setup-actions { border-top: none; padding-top: 0; }
+
+.gm-waiting {
+  display: flex; gap: var(--gap-sm); align-items: flex-start;
+  border: 1px solid var(--gold); border-radius: var(--radius-sm);
+  padding: var(--gap-sm) var(--gap); color: var(--ink);
+  font-size: var(--fs-ui); line-height: var(--lh-body);
+}
+.gm-waiting svg { flex: none; margin-top: 2px; color: var(--gold); }
+.gm-failed {
+  border: 1px solid var(--red); border-radius: var(--radius-sm);
+  padding: var(--gap-sm) var(--gap); font-size: var(--fs-ui);
+  line-height: var(--lh-body);
+}
+/* A <details>, not a <div>: the steps are present whenever an address is, so
+   somebody re-reading step 4 after a weekly re-sign-in can find them — but a
+   five-step wall of Google Cloud Console should not be the first thing on a row
+   that is already working. `display: flex` is deliberately NOT set on the
+   <details> itself; it drops the disclosure triangle in WebKit, which is the
+   whole affordance. The body gets the column instead. */
+.gm-steps-block > summary { margin-bottom: var(--gap-sm); }
+.gm-steps-block > *:not(summary) { margin-top: 0; }
+.gm-steps-block > .setup-fine + .setup-fine { margin-top: var(--gap-sm); }
+.gm-add { margin-top: var(--gap-sm); }
+.gm-add-row { display: flex; gap: var(--gap-sm); align-items: center; }
+.gm-add-row .input { flex: 1 1 auto; min-width: 0; }
+.gm-add-row .btn { flex: none; }
+
+@media (max-width: 760px) {
+  .gm-add-row { flex-wrap: wrap; }
+  .gm-add-row .input { flex: 1 1 100%; }
+  .gm-account-says { margin-left: 0; }
+  .gm-account-head { flex-wrap: wrap; }
+}

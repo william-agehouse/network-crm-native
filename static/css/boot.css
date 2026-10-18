@@ -1,0 +1,201 @@
+/* NC-049 / NC-062 — the boot animation. It was first built as five variants
+   with a picker; constellation was kept, and then the setting itself went, with
+   the constellation made smaller. So there is one animation now, no picker, no
+   `data-boot` attribute and no NC_BOOT_ANIMATION key.
+
+   THE CONSTRAINT THAT SHAPES ALL OF THIS. `<script type="module">` defers, so
+   Preact has already mounted by the time DOMContentLoaded fires — the app is
+   usually up in well under a quarter of a second off a local http.server. A
+   splash that insists on being seen therefore makes a fast app feel slow. This
+   one insists for 420 ms (--boot-min, honoured by main.js). That
+   number is the entire cost of having a splash at all, it is paid on every
+   single launch, and it is the first thing to cut if the app ever feels
+   sluggish to open.
+
+   No colour is written twice: every value resolves to tokens.css, so both
+   themes come for free and a palette change reaches the splash too. The one
+   exception is documented at .boot-mark. */
+
+#boot {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  pointer-events: none;
+  /* Painted immediately; main.js fades it out by adding .boot-done. Opacity
+     rather than display, so the app is already composited underneath and the
+     handover has nothing to lay out. */
+  opacity: 1;
+  transition: opacity 180ms ease-out;
+}
+#boot.boot-done { opacity: 0; }
+/* Removed from the DOM after the fade. Belt and braces: if main.js never runs
+   (a syntax error in a module, an offline first load with a cold SW) the splash
+   must not become a permanent white sheet over a working page. 4s is far past
+   any real mount and far short of "the user gave up". */
+#boot { animation: boot-failsafe 0s linear 4s forwards; }
+@keyframes boot-failsafe { to { opacity: 0; visibility: hidden; } }
+
+/* The shell every variant animates against: the real topbar geometry, so what
+   assembles is the app's own chrome rather than a picture of it. */
+.boot-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  height: var(--header-h);
+  padding: 0 var(--gap);
+  border-bottom: 1px solid var(--line);
+}
+.boot-mark {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: 700 var(--fs-ui)/1 var(--sans, system-ui);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.boot-name {
+  font-size: var(--fs-ui);
+  font-weight: 650;
+  letter-spacing: -.005em;
+  color: var(--ink);
+}
+.boot-view {
+  margin: var(--shell-inset);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  height: calc(100vh - var(--header-h) - var(--shell-inset) * 2);
+  overflow: hidden;
+}
+.boot-row {
+  height: var(--row-h);
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 0 var(--gap-sm);
+  border-bottom: 1px solid var(--line);
+}
+.boot-cell {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--line);
+}
+.boot-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  flex: none;
+}
+
+/* Hidden by default; each variant switches on what it needs. */
+#boot .boot-bar, #boot .boot-view { opacity: 0; }
+
+/* ── the boot animation ──────────────────────────────────────────────────────
+   ONE animation, no setting. NC-049 compared five variants through a Settings
+   picker; one was kept, and the other four plus the whole `data-boot` mechanism
+   came out (NC-062). What is left is scoped to `#boot` directly — there is no
+   attribute to select on, because there is nothing to select between.
+
+   Two shared keyframes the constellation drives the shell with. */
+@keyframes boot-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes boot-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ── constellation · the network settles, then folds away ────────────────────
+   The app is a picture of a network, so the splash draws one: nodes arrive,
+   edges connect them, the whole graph converges on its centre and hands the
+   screen over. Node colours are the real --ring-* closeness tiers, so what
+   settles is this app's own vocabulary and both themes come free.
+
+   Small and short: 420ms in a 168px box, sitting where the app's own content will
+   be a moment later. A splash shown on EVERY launch must not hold for long or fill
+   the window edge to edge (inset:0 with `slice` would also crop): it earns its
+   keep by being over before you resent it.
+
+   The edges DRAW rather than fade in. Fading twenty lines up together reads as
+   a texture appearing; drawing them from one end reads as connections being
+   made, which is the only reason to show a network at all. `pathLength="1"` in
+   the markup normalises every line to a single unit so one dashoffset rule
+   animates all twenty regardless of their real lengths. */
+#boot { --boot-min: 420; }
+/* Both must FINISH inside --boot-min or they are cut off mid-fade when the
+   splash is dismissed, which reads as a glitch rather than as a fast launch.
+   160+200 = 360 and 180+230 = 410, against a 420 hold. A test asserts it. */
+#boot .boot-bar { animation: boot-fade 160ms ease-out 200ms both; }
+#boot .boot-view { animation: boot-rise 180ms cubic-bezier(.2, .7, .3, 1) 230ms both; }
+
+#boot .boot-net {
+  position: absolute;
+  /* Centred in the CONTENT area, not the viewport: --header-h down, so the
+     graph occupies the space the first rows will fill rather than floating over
+     the chrome that is fading in above it. */
+  top: calc(var(--header-h) + 50%);
+  left: 50%;
+  width: 168px;
+  height: 168px;
+  margin: -84px 0 0 -84px;
+  opacity: 1;
+  pointer-events: none;
+  animation: boot-collapse 150ms cubic-bezier(.4, 0, 1, 1) 270ms both;
+}
+#boot .boot-net circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: boot-node 150ms cubic-bezier(.2, .7, .3, 1) both;
+  animation-delay: calc(var(--i) * 8ms);   /* 13 * 8 + 150 = 254 */
+}
+#boot .boot-net line {
+  /* --faint, not --line-strong: --line-strong is #d7d9dd against a #f3f3f4
+     background, which at .55 opacity and a sub-pixel stroke is invisible — the
+     animation would run perfectly and could not be seen. Edges want to read as
+     connections while staying subordinate to the nodes, and --faint is the
+     token that means exactly that. */
+  stroke: var(--faint);
+  stroke-dasharray: 1;
+  animation: boot-edge 140ms cubic-bezier(.3, .7, .4, 1) both;
+  animation-delay: calc(60ms + var(--i) * 5ms);  /* 60 + 19*5 + 140 = 295 */
+}
+@keyframes boot-node {
+  from { opacity: 0; transform: scale(.3); }
+  to   { opacity: 1; transform: none; }
+}
+/* Draws from one end. dashoffset 1 is the whole (normalised) length hidden. */
+@keyframes boot-edge {
+  from { opacity: 0; stroke-dashoffset: 1; }
+  to   { opacity: .65; stroke-dashoffset: 0; }
+}
+/* Converges on its own centre — which is the centre node, because the layout is
+   a ring around one. It reads as the graph folding into a single point rather
+   than as the picture being scaled down and switched off. */
+@keyframes boot-collapse {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: scale(.12); }
+}
+
+/* ── reduced motion ──────────────────────────────────────────────────────────
+   RESOLVED, not merely suppressed. Someone who asks for less motion still gets
+   a window that arrives rather than a blank sheet that snaps: every variant
+   collapses to the same short cross-fade, and the two paid variants stop being
+   paid — --boot-min goes to 0, so nothing is held back to be watched. */
+@media (prefers-reduced-motion: reduce) {
+  #boot { --boot-min: 0; }
+  #boot .boot-bar,
+  #boot .boot-view,
+  #boot .boot-row,
+  #boot .boot-name,
+  #boot .boot-mark,
+  #boot .boot-net,
+  #boot .boot-net circle,
+  #boot .boot-net line {
+    animation: boot-fade 140ms ease-out both !important;
+  }
+  #boot .boot-net { opacity: 0 !important; }
+}

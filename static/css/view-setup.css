@@ -1,0 +1,224 @@
+/* Setup progress — the panel that makes finishing setup feel worth it.
+   Shared primitives (.btn, .tag, .skel, .kbd-pill) live in ui.css; this file only
+   holds the two things that surface needs and nothing else has: a fraction bar
+   and a seven-row contribution chart.
+
+   Every colour comes from tokens.css, and two decisions from
+   docs/DESIGN_DIRECTION.md §6 govern the whole file:
+
+     · Actions are ink, not colour. Bar fills take --action (near-black), NOT
+       --accent. --accent means one thing in this app — the system responding to
+       you — and a saturated progress bar would compete with the staleness ramp
+       and the seven channel hues that already spend the colour budget.
+     · The staleness ramp is NOT reused here. Painting "needs a permission" gold
+       would repeat the exact defect §6 records: --cat-personal and --ring-close
+       being one green for two unrelated facts. These tags are metadata, so they
+       recede to the neutral .tag treatment and the WORD carries the meaning.
+
+   The one geometry number this surface invents is the bar height, declared once. */
+
+.sp-wrap {
+  --sp-bar-h: 6px;
+  --sp-step-bar-h: 6px;   /* incl. the 1px frame, so 4px of fill */
+  display: flex; flex-direction: column; gap: var(--gap);
+  /* The last step row is a hairline-separated list item, so without this the
+     panel's final row and the page's next section label sit 8px apart and read
+     as one continuous list. */
+  margin-bottom: var(--pad-view);
+}
+
+/* Loading holds the height the loaded panel will take, so the wizard around it
+   does not jump when the fetch lands. */
+.sp-wrap.loading { min-height: 120px; border-radius: var(--radius); background: var(--panel-2); }
+
+/* ── Headline: the fraction, not the total ─────────────────────────────────── */
+
+.sp-headline {
+  display: flex; flex-direction: column; gap: var(--gap-sm);
+  padding: var(--gap); border: 1px solid var(--line);
+  border-radius: var(--radius); background: var(--panel);
+}
+
+.sp-figures { display: flex; align-items: baseline; gap: calc(var(--gap) * 2); flex-wrap: wrap; }
+.sp-fig { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* The lead figure carries the page-heading size because it IS the argument of
+   this screen. The other two are the same numbers people are used to seeing and
+   are deliberately demoted to body size and --muted. */
+.sp-fig-n {
+  font-size: var(--fs-page); font-weight: 650; line-height: var(--lh-tight);
+  color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.sp-fig-l {
+  font-size: var(--fs-overline); letter-spacing: var(--ls-overline);
+  text-transform: uppercase; color: var(--faint); white-space: nowrap;
+}
+.sp-fig.quiet .sp-fig-n { font-size: var(--fs-title); font-weight: 600; color: var(--muted); }
+
+.sp-bar {
+  height: var(--sp-bar-h); border-radius: var(--sp-bar-h);
+  background: var(--panel-2); border: 1px solid var(--line);
+  overflow: hidden; flex: none;
+}
+.sp-bar-fill {
+  height: 100%; background: var(--action); border-radius: inherit;
+  transition: width var(--dur-modal) var(--ease-out);
+}
+
+.sp-gap {
+  margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--muted);
+}
+/* NC-122. Who every count of people on the page is about. Fine print on
+   purpose: it qualifies the numbers above rather than competing with them. */
+.sp-scope {
+  margin: 0; font-size: var(--fs-ui); line-height: var(--lh-body);
+  color: var(--faint);
+}
+
+/* ── Step counter ─────────────────────────────────────────────────────────── */
+
+/* NC-113: wraps. Once every source is connected this row holds the fraction,
+   its label, a "not collecting" chip, the axis note and two buttons — more
+   than 500px of content, which in a 375px window would push the whole Data page
+   into sideways scrolling. Same omission as the step heads NC-186 fixed. */
+.sp-count {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: 2px var(--gap-sm); min-width: 0;
+}
+.sp-count-n {
+  font-size: var(--fs-title); font-weight: 650; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.sp-count-of { font-weight: 500; color: var(--faint); }
+.sp-count-l {
+  font-size: var(--fs-overline); letter-spacing: var(--ls-overline);
+  text-transform: uppercase; color: var(--faint);
+}
+.sp-axis { font-size: var(--fs-ui); color: var(--faint); min-width: 0; }
+.sp-count-actions {
+  margin-left: auto; display: flex; align-items: center; gap: var(--gap-sm); flex: none;
+}
+
+/* ── Per-step contribution ────────────────────────────────────────────────── */
+
+.sp-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+
+/* Hairlines between rows rather than around them: seven bordered cards would
+   out-weigh the headline they are supposed to support.
+
+   A row that has neither run nor is next collapses to just its head, so an
+   untouched install is a tight list of seven names rather than a long empty
+   chart. */
+.sp-step { padding: 5px 0; border-top: 1px solid var(--line); }
+.sp-step:first-child { border-top: 0; }
+.sp-step.next, .sp-step.done { padding: var(--gap-sm) 0; }
+
+/* Wraps (NC-186): the step that carries the Full Disk Access price has a label,
+   two tags and that price on one row, and at phone width the price ran 30px out
+   of the card. Wrapping drops the price to its own line, still right-aligned by
+   `.sp-step-n`'s margin-left:auto, instead of letting it overflow. */
+.sp-step-head {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 2px var(--gap-sm); min-width: 0;
+}
+
+/* A step with no icon renders an empty box of the same width, so the seven
+   labels stay in one column instead of one row hanging left (icons.js returns
+   null for an unknown name — by design, so a hole is visible in review). */
+.sp-step-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--ic); height: var(--ic); flex: none; color: var(--faint);
+}
+.sp-step.done .sp-step-ic { color: var(--ink); }
+
+.sp-step-label {
+  font-size: var(--fs-title); font-weight: 600; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sp-step.done .sp-step-label,
+.sp-step.next .sp-step-label { color: var(--ink); }
+.sp-step.next .sp-step-ic { color: var(--ink); }
+
+/* Neutral by decision, not by omission — see the header of this file. */
+.sp-tag {
+  font-size: var(--fs-overline); font-weight: 600; line-height: 1.5;
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  padding: 1px 6px; background: var(--panel-2); color: var(--faint);
+  white-space: nowrap; flex: none;
+}
+/* The one emphatic thing on the panel, and it earns it: with seven rows and one
+   of them being what you should actually do, that row needs to win. --action,
+   not --accent, per §6 — this is the same treatment as a count badge, and it
+   keeps the blue meaning "the system is responding to you". */
+.sp-tag.lead {
+  background: var(--action); border-color: var(--action); color: var(--on-action);
+}
+
+.sp-step-n {
+  margin-left: auto; flex: none; font-size: var(--fs-ui); color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.sp-step-n strong { font-weight: 650; color: var(--ink); }
+.sp-pending { color: var(--faint); }
+
+/* Only rendered for a step that has actually run — see setup-progress.js. There
+   is deliberately no empty-track style: an unfinished step draws nothing, so a
+   placeholder can never be mistaken for a measurement of zero. */
+/* The hairline is doing real work, not decoration. Without it the track is
+   --panel-2 on --bg — invisible — so a source at 100% rendered as a black rule
+   floating under its label rather than as a full bar, and one at 8% gave the eye
+   nothing to read the 8% against. The frame is what makes a proportion legible. */
+.sp-step-track {
+  height: var(--sp-step-bar-h); margin: 5px 0 0;
+  border-radius: var(--sp-step-bar-h); background: var(--panel-2);
+  border: 1px solid var(--line); overflow: hidden;
+}
+.sp-step-fill {
+  height: 100%; background: var(--action); border-radius: inherit;
+  transition: width var(--dur-modal) var(--ease-out);
+}
+
+/* Indented to the label, not the icon — otherwise the sentence and the name it
+   belongs to start at two different left edges and read as two columns. */
+.sp-step-why {
+  margin: 4px 0 0; padding-left: calc(var(--ic) + var(--gap-sm));
+  font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--muted);
+}
+.sp-cost { color: var(--faint); }
+/* NC-186: the second line under the next step — both ways in. Quieter than the
+   `gives` line above it, because it is the fine print of the price, not the pitch. */
+.sp-step-how { margin-top: 2px; color: var(--faint); }
+
+/* Narrow rail (the wizard's sidebar): the three figures stack, because at 340px
+   they otherwise wrap mid-label and the fraction stops reading as a fraction. */
+@media (max-width: 700px) {
+  .sp-figures { gap: var(--gap); }
+  .sp-fig-l { white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-bar-fill, .sp-step-fill { transition: none; }
+}
+
+/* ── NC-076: "connected" and "collecting" are two different claims ────────────
+   `--gold` is the app's existing warning ink — the same one the LinkedIn panel
+   and the permission panel use for "this needs you". Reusing it is the point:
+   a new colour for a new state would make the page teach two vocabularies for
+   one meaning. Nothing here is --accent, which per DESIGN_DIRECTION §6 means
+   interaction and never severity. */
+.sp-count-warn {
+  font-size: var(--fs-overline); font-weight: 600; line-height: 1.5;
+  border: 1px solid var(--gold); border-radius: var(--radius-pill);
+  padding: 1px 6px; color: var(--gold); background: transparent;
+  white-space: nowrap; flex: none; margin-left: 6px;
+}
+.sp-tag.warn { border-color: var(--gold); color: var(--gold); background: transparent; }
+
+/* A left edge rather than a fill: the row is still a real, finished source that
+   really did collect this much, so it is not struck through or dimmed — only
+   flagged. Overstating a pause as a failure is the same class of bug in the
+   other direction. */
+.sp-step.blocked { border-left: 2px solid var(--gold); padding-left: 8px; margin-left: -10px; }
+.sp-step-blocked {
+  margin: 2px 0 0; font-size: var(--fs-ui); color: var(--gold);
+}

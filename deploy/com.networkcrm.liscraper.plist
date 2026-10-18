@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  TEMPLATE — do not `launchctl load` this file as it sits in the repo.
+
+  This is a template. A path baked into a shipped file would be wrong on every
+  other machine, so the file is visibly, unmistakably a template instead: there
+  is no installer script for it, and __NETWORK_CRM_ROOT__ below is a token, not
+  a path, chosen specifically so it CANNOT be mistaken for a real,
+  only slightly-wrong path and loaded by accident. It is filled in for whoever
+  installs it: substitute your own checkout's absolute path before use, e.g.:
+
+    sed 's|__NETWORK_CRM_ROOT__|/Users/you/path/to/network-crm|g' \
+      deploy/com.networkcrm.liscraper.plist > ~/Library/LaunchAgents/com.networkcrm.liscraper.plist
+    launchctl load ~/Library/LaunchAgents/com.networkcrm.liscraper.plist
+
+  __NETWORK_CRM_ROOT__/.venv is this project's OWN venv on the scraper machine,
+  not one from a parent folder. Create it there with the scraper's own
+  dependencies (selenium, anthropic) before loading.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.networkcrm.liscraper</string>
+
+    <!-- Wake the dispatcher; IT decides whether to actually run a session. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>__NETWORK_CRM_ROOT__/.venv/bin/python</string>
+        <string>__NETWORK_CRM_ROOT__/crm/scrape_dispatch.py</string>
+    </array>
+
+    <!-- Every 30 minutes. The dispatcher self-gates on active hours, daily cap,
+         inter-session spacing and cooldown, so frequent ticks are cheap. -->
+    <key>StartInterval</key>
+    <integer>1800</integer>
+
+    <key>WorkingDirectory</key>
+    <string>__NETWORK_CRM_ROOT__</string>
+
+    <!-- Don't fire a session the instant the agent loads / user logs in. -->
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>ProcessType</key>
+    <string>Background</string>
+
+    <key>StandardOutPath</key>
+    <string>__NETWORK_CRM_ROOT__/data/dispatch.log</string>
+    <key>StandardErrorPath</key>
+    <string>__NETWORK_CRM_ROOT__/data/dispatch.err</string>
+</dict>
+</plist>

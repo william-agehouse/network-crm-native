@@ -1,0 +1,22 @@
+<!-- The dock icon. Matches .wordmark .mark in static/css/ui.css and the favicon
+     in static/index.html: the accent token #3b6fe0, a rounded square, a bold
+     sans "n". (Written without its CSS leading dashes on purpose: "- -" is
+     illegal inside an XML comment, and spelling the token in full here would turn
+     the Dock icon into a rendered XML parse error. See the xmllint guard in
+     appify.sh.)
+
+     It used to be a persimmon #b5502a square with an italic Georgia "n" — the
+     older editorial identity, retired in the redesign. Keeping it would have left
+     three marks that disagreed with each other: this one, the browser favicon,
+     and the wordmark inside the app.
+
+     Hexes are literal here because appify.sh rasterises this file through
+     sips/qlmanage at build time — there is no CSS, so no token to read. If the
+     accent is ever retuned in tokens.css, this file and index.html must follow.
+     Geometry matches the wordmark's proportions: 20% corner radius, cap height
+     about 65% of the box. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <rect x="64" y="64" width="896" height="896" rx="180" ry="180" fill="#3b6fe0"/>
+  <text x="512" y="712" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+        font-weight="700" font-size="620" fill="#ffffff" text-anchor="middle">n</text>
+</svg>

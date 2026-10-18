@@ -1,0 +1,25 @@
+# Deliberately narrow: only things that are actually broken, not style opinions.
+# Widen it when you want to, not by accident. The first five are the ones a check
+# should fail on; F401 is reported but never blocks, because several `import
+# config` lines exist only for their side effect of loading secrets/.env.
+#
+#   E9   syntax errors / IO errors
+#   F63  invalid comparisons (e.g. `is` on literals, always-true asserts)
+#   F7   syntax-adjacent mistakes (break outside loop, f-string issues)
+#   F82  undefined names — the NameError-at-runtime class of bug
+#   F811 redefinition of an unused name (a lost function, a duplicate def)
+#   F401 unused imports
+
+target-version = "py310"
+line-length = 100
+
+exclude = [
+    ".venv",
+    "**/__pycache__",
+    "data",
+    "secrets",
+    "packaging/dist",
+]
+
+[lint]
+select = ["E9", "F63", "F7", "F82", "F811", "F401"]

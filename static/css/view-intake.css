@@ -1,0 +1,285 @@
+/* ── Intake (paste → review → save) ──────────────────────────────────────────
+   The view surface for crm/api_intake.py, added by NC-016. Owned with
+   static/app/intake.js; nothing else reads an .ik-* selector.
+
+   THIS FILE MUST BE LINKED FROM static/index.html, after view-data.css:
+
+       <link rel="stylesheet" href="css/view-intake.css" />
+
+   Until that line exists the page renders as unstyled markup, which is the
+   silent frontend failure tests/test_frontend_gates.py's
+   TestStylesheetsAreRegistered exists to catch — and
+   tests/test_intake_ui.py asserts it too, for this file by name.
+
+   Register: docs/DESIGN_DIRECTION.md §2/§6. Every colour, size, radius and
+   font-size resolves to a variable in tokens.css — nothing here hardcodes one.
+
+   TYPE — the same four treatments the Data page uses, and no fifth:
+
+     24px/620          the page title, once
+     11px/650 caps     .section-label group labels and the phase strip
+     13px/600 --ink    a person's name, a field label, a button
+     13px/400 --muted  every sentence, every reason, every cap
+
+   COLOUR IS STATE, and this page has exactly three:
+
+     .bad   a refusal the server made about your database — an excluded or
+            deleted person, an ambiguous match, an accounting hole
+     .warn  something that needs YOU — an unconfirmed name, a degraded path
+     .ok    a state you just reached — a name you confirmed
+
+   Nothing else is tinted. --accent appears only where ui.css already puts it
+   (the focus ring on .input), because it means interaction and nothing else. */
+
+/* ── Page frame ──────────────────────────────────────────────────────────── */
+.intake-view {
+  max-width: 860px;             /* the same measure as .data-view */
+  margin: 0 auto;
+  padding: var(--pad-view) var(--pad-view) 80px;
+  font-size: var(--fs-ui);
+  line-height: var(--lh-body);
+}
+.intake-view .grow { flex: 1; min-width: 0; }
+
+.ik-head { margin-bottom: var(--pad-view); }
+.ik-title {
+  font-family: var(--sans);      /* the display serif stays out of the chrome */
+  font-size: var(--fs-page);
+  font-weight: 620;
+  letter-spacing: -.015em;
+  line-height: var(--lh-tight);
+  margin: 0;
+}
+.ik-sub { margin: var(--gap-sm) 0 0; color: var(--muted); max-width: 62ch; }
+
+/* Where you are in the flow. Three words, not a progress bar: the steps are
+   named states this view really has, so the strip is a label and never a
+   control. */
+.ik-phases { display: flex; gap: var(--gap); margin-top: var(--gap); }
+.ik-phase {
+  font-size: var(--fs-overline);
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--faint);
+}
+.ik-phase.on { color: var(--ink); }
+
+/* ── Paste ───────────────────────────────────────────────────────────────── */
+textarea.ik-paste {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  font-family: var(--mono);      /* a pasted block is data — align the columns */
+  line-height: var(--lh-body);
+}
+.ik-below {
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  margin-top: var(--gap);
+}
+.ik-count { color: var(--muted); }
+.ik-count.warn { color: var(--gold); }
+.ik-acts { display: flex; gap: var(--gap-sm); flex-wrap: wrap; }
+
+/* A parked draft. One line, two ways out, and it says plainly that nobody in it
+   has been added — a draft that looked like a queue would imply otherwise. */
+.ik-draft {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  padding: var(--gap-sm) var(--gap);
+  margin-bottom: var(--gap);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+
+.ik-caps { margin-top: var(--pad-view); }
+
+/* ── Sentences, reasons and numbers ──────────────────────────────────────── */
+/* The server writes prose about what it did and did not do, and this page's job
+   is to show it rather than summarise it. One rule for all of it. */
+.ik-sentences { margin: var(--gap-sm) 0 0; padding-left: 18px; color: var(--muted); }
+.ik-sentences li { margin-bottom: 4px; }
+
+.ik-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: var(--gap-sm) 0 0;
+  color: var(--muted);
+}
+.ik-line .ic { flex: none; align-self: center; }
+.ik-line.muted { color: var(--muted); }
+.ik-line.warn { color: var(--gold); }
+.ik-line.bad { color: var(--danger); }
+.ik-line.ok { color: var(--green); }
+
+.ik-nums { display: flex; gap: var(--gap); flex-wrap: wrap; margin-top: var(--gap-sm); }
+.ik-num { color: var(--muted); }
+.ik-num b { color: var(--ink); font-weight: 650; }
+
+.ik-report, .ik-links, .ik-receipt { margin-bottom: var(--pad-view); }
+
+/* Everything the parse declined, folded away. Open by default would put the
+   refusals above the people, and the report's own sentences already state the
+   counts — this is the detail behind a number that is already on screen. */
+.ik-dropped { margin-top: var(--gap-sm); }
+.ik-dropped summary { color: var(--muted); cursor: default; }
+.ik-drop {
+  display: flex;
+  gap: var(--gap-sm);
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.ik-drop-where { flex: none; width: 6rem; color: var(--faint); }
+
+/* ── One proposed person ─────────────────────────────────────────────────── */
+.ik-row {
+  padding: var(--gap) 0;
+  border-top: 1px solid var(--line);
+}
+.ik-row:last-of-type { border-bottom: 1px solid var(--line); }
+/* A blocked row keeps its place in the list — it is not an error state, it is a
+   person who will not be written and says why. The rule marks it without
+   tinting the whole block, which would make a refusal louder than a name. */
+.ik-row.blocked { box-shadow: inset 2px 0 0 var(--gold); padding-left: var(--gap-sm); }
+.ik-row.skipped { opacity: .55; }
+
+.ik-rhead { display: flex; align-items: center; gap: var(--gap-sm); }
+.ik-rname {
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Two columns at width, one when narrow. A field is a label, the value, and —
+   when the value will NOT be written — the reason, which is the part worth
+   reading. */
+.ik-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: var(--gap-sm) var(--gap);
+  margin-top: var(--gap-sm);
+}
+.ik-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ik-flabel {
+  font-size: var(--fs-overline);
+  letter-spacing: var(--ls-overline);
+  text-transform: uppercase;
+  font-weight: 650;
+  color: var(--faint);
+}
+.ik-why { color: var(--muted); }
+
+.ik-confirm {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  margin-top: var(--gap-sm);
+}
+.ik-confirm .ik-why { flex: 1 1 20rem; }
+
+/* ── Links found in the paste ────────────────────────────────────────────── */
+.ik-link {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  min-height: var(--row-h);
+  border-top: 1px solid var(--line);
+}
+.ik-url {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: var(--fs-overline);
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ik-read { flex: none; color: var(--muted); }
+
+/* ── The commit bar and the receipt ─────────────────────────────────────── */
+.ik-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  margin-top: var(--pad-view);
+  padding-top: var(--gap);
+  border-top: 1px solid var(--line);
+}
+.ik-bar .grow { color: var(--muted); }
+
+/* The same two-step shape as deleting a list: the question states the
+   consequence in numbers before the second press. */
+.ik-confirm-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  flex-wrap: wrap;
+  padding: var(--gap-sm) var(--gap);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--panel-2);
+}
+.ik-cq { color: var(--ink); max-width: 44ch; }
+
+.ik-receipt.nothing { color: var(--muted); }
+.ik-outcomes { margin-top: var(--gap-sm); }
+.ik-outcome {
+  display: flex;
+  gap: var(--gap-sm);
+  align-items: baseline;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
+.ik-outcome.bad { color: var(--danger); }
+.ik-oname { flex: none; width: 12rem; font-weight: 600; color: var(--ink); }
+/* A person who was just created is worth opening, so their name is the link.
+   Ink plus an underline, per DESIGN_DIRECTION §6 — never the accent blue. */
+.ik-olink {
+  flex: none;
+  width: 12rem;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.ik-olink:hover { text-decoration-color: var(--ink); }
+
+@media (max-width: 640px) {
+  .intake-view { padding: var(--gap) var(--gap) 64px; }
+  .ik-drop-where, .ik-oname, .ik-olink { width: auto; }
+}
+
+/* A value that CANNOT be written — a matched person's name, a column that
+   already holds something, anything on a refused row — is text, not an input.
+   The reason under it is the point of the row. */
+.ik-fval {
+  min-height: var(--ctl-h);
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -1,0 +1,307 @@
+/* ── Design tokens — cool neutral instrument ─────────────────────────────────
+   See docs/DESIGN_DIRECTION.md for the why. In short: this app is built for
+   networks of thousands of people and tens of thousands of conversations, with
+   seven channels and a 0–100 score. It was dressed as an editorial magazine —
+   cream paper, a display serif, terracotta warmth — a register built for reading
+   three paragraphs, not for scanning thousands of rows. It now reads as an instrument: cool neutral surfaces, hairline
+   structure, and colour reserved for MEANING (staleness, channel, strength)
+   rather than warmth.
+
+   The register: quiet surfaces, one action colour, a pastel tag family, a
+   weight-not-size hierarchy, and accents that only ever carry meaning.
+
+   EVERY VARIABLE NAME HERE IS A CONTRACT. ~5,000 lines of CSS and JS read
+   these, so values may be retuned freely but names must not be removed — that
+   is what makes the whole re-skin one reversible file.
+
+   Toggle via <html data-theme="dark|light">; defaults follow the OS. */
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("../fonts/fraunces-var-normal.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("../fonts/fraunces-var-italic.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  /* Fraunces is kept but demoted: it is no longer the UI face. Reserve it for
+     at most one or two deliberate editorial moments (a person's name on their
+     own page). The app's frame, tables and controls are all --sans. */
+  --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* Radius scale: 4 pills · 8 controls · 12 cards/modals.
+     Was 14/9 — softer and rounder reads as consumer app, not instrument. */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 4px;
+
+  /* ── Type scale ────────────────────────────────────────────────────────────
+     Hierarchy comes from WEIGHT, not size. Four sizes only.
+     13px UI text is the workhorse; anything larger is a page title. */
+  --fs-overline: 11px;   /* letterspaced section labels */
+  --fs-ui: 13px;         /* table cells, controls, the body of everything */
+  --fs-title: 15px;      /* row titles, card headings */
+  --fs-page: 24px;       /* page headings */
+  --ls-overline: .06em;
+  --lh-tight: 1.35;
+  --lh-body: 1.5;
+
+  /* ── Density ───────────────────────────────────────────────────────────────
+     40px rows fit ~10 people per viewport instead of ~6, and read calmer
+     because alignment carries the eye instead of whitespace. */
+  --row-h: 40px;
+  --row-h-sm: 36px;      /* the daily-review list */
+  --gap: 12px;
+  --gap-sm: 8px;
+  --pad-view: 20px;
+  --header-h: 48px;      /* the app header strip */
+  --ctl-h: 28px;         /* buttons, inputs, pills — one control height */
+  --ic: 16px;            /* icon size, @1.5px stroke */
+  /* .45, not .32 — ui.css used to override this with .45, so .45 is what the
+     app has always looked like. Moving the value here kept it, so nothing on
+     screen changed. */
+  --scrim: rgba(16, 18, 20, .45);  /* modal backdrop — needs a per-theme value */
+
+  /* ── Surfaces ──────────────────────────────────────────────────────────────
+     --bg is the tinted SHELL the app sits in; --panel is the inset sheet that
+     floats on it (the cheapest perceived-quality trick there is). --panel-2 is a recessed strip inside a panel. */
+  --bg: #f3f3f4;
+  --panel: #ffffff;
+  --panel-2: #fafafb;
+  --shell-inset: 8px;
+
+  /* ── Ink ramp ──────────────────────────────────────────────────────────────
+     Three greys only: primary, secondary, placeholder. */
+  --ink: #17181a;
+  /* --muted was #75777c, which gave 4.48:1 on --panel and 4.00:1 on --hover
+     — under WCAG AA's 4.5:1 for body text, and it is the default for ALL
+     secondary text in the app, so it was the single most-read failing value.
+     #6d6e73 is the same hue and saturation, darkened until it clears on the
+     WORST surface a row can sit on (--hover, which every table row uses):
+     5.09 / 4.88 / 4.54 on panel / panel-2 / hover. */
+  --muted: #6d6e73;
+  /* --faint stays at 2.72:1 deliberately. It is the DECORATION tier — the "·"
+     separators, disabled hints, redundant glyphs — never text that carries
+     meaning on its own. Darkening it to pass would collapse it into --muted and
+     destroy the three-step ramp. Any content-bearing text on --faint is a bug in
+     the caller, not in this value; such text belongs on --muted. */
+  --faint: #9b9da1;
+  --line: #e8e9eb;
+  --line-strong: #d7d9dd;
+  --hover: #f1f2f4;
+
+  /* ── Actions are ink, not colour ───────────────────────────────────────────
+     Primary buttons and links are near-black. The reasoning: this screen
+     already spends its colour budget on MEANING — the staleness ramp, the
+     seven channel hues, the closeness tiers — and a saturated Submit button
+     competes with all of it for the same attention. Ink wins the hierarchy on
+     weight and contrast instead, which leaves blue free to mean one thing.
+     In dark mode this inverts to near-white on dark, the usual pairing. */
+  --action: #1c1d21;
+  --action-hover: #34363b;
+  --on-action: #ffffff;
+
+  /* ── The interaction signal ────────────────────────────────────────────────
+     --accent is no longer "the action colour" — it is the blue that means the
+     system is responding to you: focus rings, the selected row, info notices.
+     Actions moved to --action above. Kept under the old names because ~100
+     call sites read them and every one of those is still a genuine
+     interaction signal. */
+  --accent: #3b6fe0;
+  --accent-ink: #2f59b4;
+  --accent-soft: #dce9f8;
+  --on-accent: #ffffff;
+
+  /* Semantic status. State, never flavour. */
+  --green: #2f8a5b;
+  --green-soft: #dff2de;
+  --gold: #9a7b18;
+  --gold-soft: #fbf0d2;
+  --red: #c04434;
+  --red-soft: #fbe3d0;
+  --danger: #c04434;
+
+  /* ── Staleness ramp ───────────────────────────────────────────────────────
+     For the "last contact" column. The point of the People table is that
+     neglect is VISIBLE (empty cells say "No contact", never blank), so
+     silence has to have a colour.
+
+     All four are darkened from their first values (#2f8a5b / #9a7b18 / #b06a2c /
+     #9b9da1), which gave 4.28 / 4.02 / 4.25 / 2.72:1 on --panel and worse on
+     --hover — the whole ramp was under WCAG AA. Since the decision was to keep
+     the traffic light ON THE TEXT rather than on a dot, every tier has to be
+     legible or the decision does not survive contact with the screen. Hue and
+     saturation are unchanged; only lightness moved, each until it clears 4.5:1
+     on --hover. Now 5.05 / 5.09 / 5.10 / 5.05 on --panel, 4.51+ on --hover.
+
+     KEEP THAT PARAGRAPH INSIDE THIS COMMENT. Closing the block early would leave
+     it as bare prose inside :root — which a CSS parser treats as a malformed
+     declaration and recovers from by discarding everything up to the next
+     semicolon. The next semicolon is --stale-fresh's own, so the token would be
+     silently swallowed and every "recently contacted" colour in the app would
+     compute to nothing. Contrast ratios calculated in Python cannot catch that;
+     only reading the parsed value out of the browser can. */
+  --stale-fresh: #2b7d53;    /* days */
+  --stale-warm: #866b15;     /* weeks */
+  --stale-cool: #9e5f28;     /* months */
+  /* Deliberately lands on --muted's value: "over a year, or never" means there
+     is no signal left, so the cold end of a traffic light should read as plain
+     secondary text rather than as a colour. It kept --faint's hex before, which
+     is why it was the worst pair on the screen at 2.72:1. */
+  --stale-cold: #6c6f73;     /* over a year, or never */
+
+  /* ── Channel identity ─────────────────────────────────────────────────────
+     One hue per channel so a row's provenance is readable at a glance. */
+  --ch-imessage: #2f8a5b;
+  --ch-whatsapp: #1f8a70;
+  --ch-email: #6b5bd2;
+  --ch-linkedin: #2f6fb4;
+  --ch-telegram: #2b8ccc;
+  --ch-messenger: #7a5bd2;
+  --ch-instagram: #c0447e;
+
+  /* categories — cool, distinguishable, not decorative */
+  --cat-personal: #2f8a5b;
+  --cat-professional: #3b6fe0;
+  --cat-both: #7a5bd2;
+  --cat-unknown: #9b9da1;
+  --cat-none: #d7d9dd;
+
+  /* strength ring tiers — one ramp, reads as temperature.
+     NC-373. --ring-faint was #d7d9dd, the same grey as --line-strong: 1.41:1 on
+     --panel, and it is the colour every ring falls back to, so most people's
+     rings were invisible. WCAG asks 3:1 of a graphic that carries meaning.
+     #85878c keeps the cool grey and is the lightest one that clears it on every
+     surface a ring sits on: 3.59 --panel, 3.45 --panel-2, 3.24 --bg, 3.21 --hover.
+     It is still the quietest tier: --ring-loose is 4.02 on --panel. It is also
+     the colour of the .ask-r-dot / .nx-dot / .pd-dot tier dots, which get the
+     same fix. tests/test_error_text_is_plain.py computes the ratios. */
+  --ring-close: #2f8a5b;
+  --ring-active: #3b6fe0;
+  --ring-loose: #9a7b18;
+  --ring-faint: #85878c;
+
+  /* Structure comes from hairlines, not shadows. --shadow-lift is for true
+     overlays only (modals, popovers, toasts). */
+  --shadow-lift: 0 1px 2px rgba(16, 18, 20, .06), 0 12px 32px rgba(16, 18, 20, .12);
+
+  /* Monogram avatars: cool and low-chroma, so thousands of them don't shout. */
+  --avatar-sat: 22%;
+  --avatar-bg-l: 92%;
+  --avatar-bg-l2: 87%;
+  --avatar-ink-l: 38%;
+
+  --skel-hi: #eceef0; /* skeleton shimmer highlight */
+
+  /* ── Motion ────────────────────────────────────────────────────────────────
+     Until now there were no motion tokens at all: ~25 hand-typed durations
+     (.12s, .13s, .15s, .16s, .18s, .2s — six values for one intent) and not a
+     single easing curve, so everything fell back to the browser's built-in
+     `ease`. Those built-ins are too weak to read as deliberate; a curve is what
+     separates motion that feels designed from motion that merely runs.
+
+     The curves are the standard strong pair. --ease-out is for anything
+     entering, exiting, or responding to a press: it starts fast, which is the
+     instant the user is actually watching. --ease-in-out is for something
+     already on screen travelling from A to B.
+
+     `ease-in` has no token on purpose. It starts slow, so it delays exactly the
+     frame the eye is on, and it is the single most common way UI motion comes
+     out feeling sluggish. If a rule ever needs it, that rule is wrong.
+
+     Durations follow the per-element budget, and everything here stays under
+     300ms. The 130ms house speed predates this block and was already right —
+     it is --dur-fast now, so it has a name instead of twenty-five copies. */
+  --ease-out: cubic-bezier(.23, 1, .32, 1);
+  --ease-in-out: cubic-bezier(.77, 0, .175, 1);
+  --dur-press: 140ms;    /* press feedback */
+  --dur-fast: 130ms;     /* hover, colour, chevron rotation — the house speed */
+  --dur-pop: 180ms;      /* popovers, dropdowns, the omnibox panel */
+  --dur-modal: 220ms;    /* modals, toasts, the scrim */
+}
+
+[data-theme="dark"] {
+  /* Cool dark, not inverted warmth. */
+  --bg: #0f0f13;
+  --panel: #17171c;
+  --panel-2: #1b1b21;
+
+  --ink: #e9eaec;
+  --muted: #9a9ca3;
+  --faint: #6e7078;
+  --line: #2e2e38;
+  --line-strong: #3d3e4a;
+  --hover: #21212a;
+
+  /* Inverted: a near-black button would vanish into a near-black panel, so on
+     dark the action surface is the light one. */
+  --action: #ededf0;
+  --action-hover: #ffffff;
+  --on-action: #17181a;
+
+  --accent: #5b8cf0;
+  --accent-ink: #7ea6f5;
+  --accent-soft: #1a2540;
+  --on-accent: #0b1020;
+
+  --green: #4fb583;
+  --green-soft: #16281f;
+  --gold: #c9a94e;
+  --gold-soft: #2a2413;
+  --red: #e0705d;
+  --red-soft: #331b17;
+  --danger: #e0705d;
+
+  /* Dark needed only one change: --muted (6.51:1) and the three warm tiers
+     (7.03 / 7.88 / 6.32) already cleared AA. --stale-cold shared --faint's
+     #6e7078 and gave 3.23:1 on --hover, so it is lightened to #868890
+     (5.05 / 4.85 / 4.51) — the same reasoning as the light theme, inverted. */
+  --stale-fresh: #4fb583;
+  --stale-warm: #c9a94e;
+  --stale-cool: #d08a4e;
+  --stale-cold: #868890;
+
+  --ch-imessage: #4fb583;
+  --ch-whatsapp: #3fb59b;
+  --ch-email: #9184e8;
+  --ch-linkedin: #5b9be0;
+  --ch-telegram: #5bb6e8;
+  --ch-messenger: #a184e8;
+  --ch-instagram: #e0709e;
+
+  --cat-personal: #4fb583;
+  --cat-professional: #5b8cf0;
+  --cat-both: #a184e8;
+  --cat-unknown: #6e7078;
+  --cat-none: #3d3e4a;
+
+  /* NC-373. Was #3d3e4a, 1.69:1 on --panel. #73757d is 3.89 on --panel, 3.73
+     --panel-2, 4.16 --bg and 3.47 on --hover, the lightest surface a ring sits on. */
+  --ring-close: #4fb583;
+  --ring-active: #5b8cf0;
+  --ring-loose: #c9a94e;
+  --ring-faint: #73757d;
+
+  /* Was in ui.css's dark block; moved with the rest. Without it, dark mode
+     would inherit the light scrim and modals would sit on a grey haze. */
+  --scrim: rgba(0, 0, 0, .62);
+
+  --shadow-lift: 0 1px 2px rgba(0, 0, 0, .5), 0 16px 40px rgba(0, 0, 0, .6);
+
+  --avatar-sat: 20%;
+  --avatar-bg-l: 26%;
+  --avatar-bg-l2: 20%;
+  --avatar-ink-l: 80%;
+
+  --skel-hi: #262630;
+}

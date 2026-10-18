@@ -1,0 +1,468 @@
+/* ── Ask — the answer surface ──────────────────────────────────────────────────
+   Shared primitives (.rows/.row, .btn, .chip, .tag, .input, .skel, the shell)
+   live in ui.css and are used here rather than re-invented. Every value is a token from tokens.css — no literal colour, and
+   no literal size except sub-pixel hairline geometry.
+
+   The register:
+
+     · the question is a compact tinted bubble, right-aligned;
+     · the answer has NO bubble — it is a full-width typographic block, so
+       answers read as documents rather than chat froth;
+     · one provenance line above the answer ("Searched 500 contacts · …"),
+       expandable to the tool-call trail. It is honest, so it stays;
+     · the contacts under it are a borderless table of --row-h rows, not cards.
+       A roster answer IS the list, and 40px rows fit ten people where the old
+       cards fit four.
+
+   Colour carries meaning only: --accent for selection and focus, --gold-soft for
+   a degraded answer, --red-soft for no answer, --ring-* for closeness tier.
+   ------------------------------------------------------------------------- */
+
+/* ── Layout ────────────────────────────────────────────────────────────────────
+   Declared here in full, and not left to ui.css, even though ui.css currently
+   carries a copy: index.html loads this file after ui.css, and per-view layout is
+   this file's job by the project's own convention. So the Ask view survives ui.css
+   dropping its .ask-* block, which is the correct thing for that file to do.
+
+   The height is the shell's own arithmetic — chrome height plus the two inset
+   margins of .app-view — with a literal fallback in case --header-h moves. Retune
+   in one place. min-height:0 is the belt on the flex overflow: without it a long
+   transcript grows the scroller instead of scrolling inside it.
+
+   .ask-layout wraps the chat rail and the answer surface. The two geometry numbers
+   the whole view is built from live on it as locals rather than in tokens.css: the
+   reading measure and the rail width are private to Ask, tokens.css is the shared
+   contract this view does not own, and .ask-view already carried its 760px here
+   for exactly that reason. .ask-view reads the measure with a literal fallback, so
+   it still has one if it is ever rendered outside this wrapper.
+
+   The max-width is the arithmetic of its parts, not a rounded guess: with the rail
+   open both fit exactly, and with it closed the transcript stays centred on screen
+   the way it was before there were chats. */
+.ask-layout {
+  --ask-measure: 760px;
+  --ask-rail-w: 264px;
+  display: flex; align-items: stretch; gap: var(--pad-view);
+  position: relative;
+  max-width: calc(var(--ask-measure) + var(--ask-rail-w) + var(--pad-view));
+  margin: 0 auto;
+}
+.ask-view {
+  flex: 1 1 auto; min-width: 0;
+  max-width: var(--ask-measure, 760px); margin: 0 auto; padding: 0 var(--pad-view);
+  display: flex; flex-direction: column;
+  height: calc(100dvh - var(--header-h, 48px) - var(--shell-inset) * 2);
+}
+.ask-scroll {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: var(--pad-view) 4px var(--gap-sm);
+  display: flex; flex-direction: column; gap: var(--gap);
+}
+
+/* ── The chat rail ─────────────────────────────────────────────────────────────
+   The frame only. Everything inside it — .plist-tools, .plist-scroll, .prow and
+   its .p-name / .p-meta lines, the mobile collapse — is Lists' index column from
+   ui.css, unchanged, because a second index pattern would be a second thing to
+   learn.
+
+   Three overrides, and each one is here because .plist was written for a view
+   whose page scrolls:
+     · narrower. 340px is sized for a person row with an avatar, a tag and a
+       staleness column; a chat row is a title and one muted line, and 264px
+       leaves the reading measure intact on a 1080px window.
+     · position: static, not sticky. This rail is a flex child of a fixed-height
+       row, so it is already exactly as tall as the transcript and has nothing to
+       stick to. Sticky with a --header-h offset inside a non-scrolling parent is
+       an offset waiting to be applied by the wrong ancestor.
+     · max-height: none. .plist caps itself against 100vh minus the People view's
+       padding, which is not this view's arithmetic and would leave the rail a few
+       pixels short of the transcript beside it.
+   min-height: 0 is what makes .plist-scroll actually scroll instead of growing
+   the rail past the bottom of the window. */
+.ask-rail {
+  width: var(--ask-rail-w); flex: none;
+  position: static; max-height: none; min-height: 0;
+  /* Matches .ask-scroll's own top padding, so New chat sits on the same line as
+     the first turn instead of on the panel's top edge. .people-layout pays for
+     this with padding on the wrapper; here the wrapper cannot have any, because
+     the transcript's height arithmetic is measured from the panel edge. */
+  padding-top: var(--pad-view);
+}
+.ask-rail-head { display: flex; gap: var(--gap-sm); align-items: center; }
+.ask-rail-new { flex: 1; }
+/* .section-label carries a bottom margin for page sections; in a tool strip the
+   flex gap already spaces it. */
+.ask-rail-count { margin: 0; }
+
+/* Where the pre-chats transcript went. Not a warning — nothing went wrong and
+   nothing was lost — so it takes --accent-soft, the "the system did something in
+   response to you" tint, and not the gold of a degraded state. */
+.ask-adopt {
+  display: flex; align-items: flex-start; gap: var(--gap-sm);
+  padding: var(--gap-sm); border-radius: var(--radius-sm);
+  background: var(--accent-soft); color: var(--ink);
+  font-size: var(--fs-overline); line-height: var(--lh-body);
+}
+.ask-adopt-t { flex: 1; min-width: 0; }
+.ask-adopt-x {
+  flex: none; border: none; background: none; padding: 0; font: inherit;
+  color: var(--muted); cursor: pointer;
+}
+.ask-adopt-x:hover { color: var(--ink); }
+
+/* ── Empty state ───────────────────────────────────────────────────────────── */
+.ask-empty { text-align: center; margin: auto 0; padding: 40px 0 48px; }
+.ask-empty h2 {
+  font-size: var(--fs-page); font-weight: 600; letter-spacing: -.015em;
+  margin: 0 0 6px;
+}
+.ask-empty p {
+  max-width: 48ch; margin: 0 auto var(--pad-view);
+  color: var(--muted); line-height: var(--lh-body);
+}
+.ask-intents { display: flex; flex-wrap: wrap; gap: var(--gap-sm); justify-content: center; }
+.ask-intents .chip { cursor: pointer; }
+/* A notice is a left-reading block; the empty state around it is centred. */
+.ask-empty-notice { max-width: 54ch; margin: var(--pad-view) auto 0; text-align: left; }
+
+/* ── Turns ─────────────────────────────────────────────────────────────────── */
+.ask-turn {
+  display: flex; flex-direction: column; gap: 6px;
+  align-self: stretch; align-items: flex-start;
+}
+.ask-turn .ask-results, .ask-turn .ask-notice { align-self: stretch; }
+
+/* The question: a quiet recessed bubble. It is NOT filled with --accent any
+   more — the action colour is spent on selection and focus, never on saying who
+   typed which line. The squared corner is the tail. */
+.ask-question {
+  align-self: flex-end; max-width: 78%;
+  padding: 6px var(--gap);
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+  border-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-pill);
+  font-size: var(--fs-ui); line-height: var(--lh-body);
+}
+
+/* The answer: no bubble, no border, no fill. Structure comes from the measure. */
+.ask-answer {
+  max-width: 76ch;
+  font-size: var(--fs-ui); line-height: var(--lh-body); color: var(--ink);
+}
+.ask-answer .md p { margin: 0 0 var(--gap-sm); }
+.ask-answer .md p:last-child { margin: 0; }
+.ask-answer .md ul { margin: 4px 0 var(--gap-sm); padding-left: var(--pad-view); }
+.ask-answer .md li { margin-bottom: 2px; }
+.ask-answer .md b { font-weight: 650; }
+.ask-answer .md code {
+  font-family: var(--mono); font-size: .92em;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-pill); padding: 0 4px;
+}
+
+/* An incomplete answer. Quiet and grey — a caveat, not a failure. */
+.ask-cut { max-width: 76ch; color: var(--muted); font-size: var(--fs-ui); line-height: var(--lh-body); }
+
+/* ── Provenance ────────────────────────────────────────────────────────────────
+   Overline-sized, tabular figures so the counts do not jitter between answers,
+   but sentence case rather than small caps: it is data, and data has to be
+   readable at 11px. */
+.prov { display: flex; flex-direction: column; gap: 2px; align-items: flex-start; max-width: 100%; }
+.prov-line {
+  border: none; background: none; padding: 0; font: inherit;
+  font-size: var(--fs-overline); font-weight: 500; color: var(--muted);
+  font-variant-numeric: tabular-nums; letter-spacing: .01em;
+  text-align: left; display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap;
+}
+button.prov-line { cursor: pointer; }
+button.prov-line:hover { color: var(--ink); }
+.prov-chev { display: inline-flex; align-items: center; color: var(--faint); transition: transform var(--dur-fast) var(--ease-in-out); }
+.prov-chev svg { width: 11px; height: 11px; }
+.prov-chev.open { transform: rotate(90deg); }
+.prov-row {
+  font-size: var(--fs-overline); color: var(--faint);
+  line-height: var(--lh-body); font-variant-numeric: tabular-nums;
+}
+/* Which engine answered. Gold because the rule-based fallback is a degraded
+   state and must never pass silently. */
+.ask-mode { margin-left: 2px; }
+
+/* Pending: the provenance area pulses instead of a spinner, so the geometry
+   stays stable and the animation is the only thing saying "in progress". */
+.prov-searching {
+  font-size: var(--fs-overline); color: var(--muted); letter-spacing: .01em;
+  animation: prov-pulse 1.4s ease-in-out infinite;
+}
+@keyframes prov-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+/* NC-083. The counted second, next to the pulsing line.
+   Deliberately NOT animated: the pulse is decoration and this is the actual
+   liveness signal, so it has to be readable at every instant — including the
+   ones where nothing is animating at all. tabular-nums so the line does not
+   jitter as the digits change, which is the whole point of a still number. */
+.prov-elapsed {
+  font-size: var(--fs-overline); color: var(--faint); letter-spacing: .01em;
+  font-variant-numeric: tabular-nums;
+}
+/* Its own class, NOT a second `.prov` rule: .prov is already a COLUMN flex at
+   the top of this file (it stacks the summary line and the expandable trail
+   rows), and redefining it here as a row silently reflowed every provenance
+   block in the view. Two rules for one selector in one file is how that
+   happens. */
+/* flex-direction is explicit because `.prov` above sets `column` and this rule
+   inherits it otherwise — the seconds appeared on their own line under the
+   text, which is two lines to say one thing. */
+.prov-pending {
+  display: flex; flex-direction: row; align-items: baseline; gap: var(--gap-sm);
+}
+.prov-skel { height: var(--fs-ui); width: 300px; max-width: 56vw; }
+
+/* ── Notices — one diagnosis, one action, the raw cause on request ─────────────
+   Every degradation and failure in Ask renders through this, so no Python
+   exception can reach the surface unlabelled. */
+.ask-notice {
+  border-radius: var(--radius-sm); padding: var(--gap-sm) var(--gap);
+  font-size: var(--fs-ui); line-height: var(--lh-tight);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.ask-notice.warn { background: var(--gold-soft); color: var(--gold); }
+.ask-notice.bad { background: var(--red-soft); color: var(--red); }
+.ask-notice-row { display: flex; align-items: center; gap: var(--gap-sm); flex-wrap: wrap; }
+.ask-notice-text { flex: 1; min-width: 16ch; }
+/* The ghost button is --muted by default, which is unreadable on a tint. */
+.ask-notice .btn.quiet {
+  flex: none; color: inherit; background: var(--panel);
+  border-color: color-mix(in srgb, currentColor 35%, transparent);
+}
+.ask-notice .btn.quiet:hover { color: inherit; background: var(--panel); border-color: currentColor; }
+.ask-notice-more {
+  flex: none; border: none; background: none; padding: 0; font: inherit;
+  font-size: var(--fs-overline); font-weight: 650; color: inherit;
+  letter-spacing: var(--ls-overline); text-transform: uppercase;
+  opacity: .75; cursor: pointer;
+}
+.ask-notice-more:hover { opacity: 1; }
+.ask-notice-detail {
+  display: block; font-family: var(--mono); font-size: var(--fs-overline);
+  line-height: var(--lh-body); color: var(--ink);
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius-pill); padding: 6px var(--gap-sm);
+  white-space: pre-wrap; overflow-wrap: anywhere;
+}
+
+/* ── Contact results — a borderless table, not a stack of cards ──────────────── */
+.ask-results { display: flex; flex-direction: column; gap: 6px; }
+.ask-result-list { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+/* Rows are a preview, not the answer: cap the run at exactly the eight rows the
+   view paints before the expander, so "Show all 30" scrolls inside its own box
+   instead of pushing the answer off the top of the screen. */
+.ask-result-list.capped { max-height: calc(var(--row-h) * 8); overflow-y: auto; }
+
+/* .row already gives --row-h, the hairline divider and the --hover fill.
+   Selection needs to beat hover, because you pick people with the pointer
+   already moving: an accent-tinted fill plus the inset bar, both of which
+   survive the cursor resting on a different row. */
+.ask-result { gap: 0; padding: 0 var(--gap-sm) 0 6px; }
+.ask-result.sel { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.ask-result.sel:hover { background: var(--accent-soft); }
+
+.ask-tick {
+  flex: none; width: 16px; height: 16px; margin-right: var(--gap-sm);
+  padding: 0; border-radius: var(--radius-pill);
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-overline); line-height: 1; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--line-strong); color: transparent;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-press) var(--ease-out);
+}
+.ask-tick:hover { border-color: var(--accent); }
+.ask-result.sel .ask-tick { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* The row body is its own button so Tab and Enter still open the person; it must
+   not look or size like a button. */
+.ask-open {
+  flex: 1; min-width: 0; min-height: var(--row-h);
+  display: flex; align-items: center; gap: var(--gap-sm);
+  text-align: left; border: none; background: none; padding: 0;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.ask-open .row-title { flex: 0 1 auto; max-width: 42%; }
+.ask-open .row-meta { flex: 1 1 auto; min-width: 0; }
+.ask-r-tags { flex: none; display: flex; gap: 4px; }
+/* Closeness as a dot plus a humanised label (DESIGN_DIRECTION §2). */
+.ask-r-strength {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-overline); text-transform: lowercase;
+}
+.ask-r-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--ring-faint); }
+.ask-r-dot.t-close { background: var(--ring-close); }
+.ask-r-dot.t-active { background: var(--ring-active); }
+.ask-r-dot.t-loose { background: var(--ring-loose); }
+.ask-r-dot.t-faint { background: var(--ring-faint); }
+
+/* The selection bar. The count has exactly one owner and it is .ask-select-count
+   — every control beside it states no number (DESIGN_DIRECTION §4). */
+.ask-select-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding-left: 2px; }
+.ask-select-count {
+  font-size: var(--fs-overline); font-weight: 650; color: var(--muted);
+  letter-spacing: var(--ls-overline); text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Per-answer actions — hover-reveal, keyboard-visible via focus-within. */
+.ask-actions { display: flex; gap: 2px; opacity: 0; transition: opacity var(--dur-fast) ease; }
+.ask-turn:hover .ask-actions, .ask-actions:focus-within { opacity: 1; }
+@media (hover: none) { .ask-actions { opacity: 1; } }
+
+/* ── Footer: composer + conversation controls, one block ────────────────────── */
+.ask-foot { flex: none; border-top: 1px solid var(--line); }
+.composer {
+  position: static; background: none;
+  padding: var(--gap-sm) 0; display: flex; gap: var(--gap-sm); align-items: center;
+}
+.composer .input { font-size: var(--fs-ui); min-height: var(--row-h-sm); padding: 6px var(--gap); }
+/* NC-153. The composer is a textarea now, so it needs the things an <input> got
+   for free: no resize grabber (the JS owns the height, and a user-dragged one
+   would fight it), no baseline gap under it, and wrapping that breaks a long
+   pasted line instead of scrolling sideways. align-items on .composer is
+   flex-end rather than center so the Ask button stays on the LAST line as the
+   box grows, instead of drifting to the middle of a paragraph. */
+.composer { align-items: flex-end; }
+.composer .ask-input {
+  resize: none; display: block; overflow-y: auto;
+  line-height: 1.45; max-height: 40vh; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.composer .btn.primary { flex: none; min-height: var(--row-h-sm); padding: 0 var(--gap); }
+/* NC-154. Stop takes the Ask button's place rather than sitting beside it, so it
+   inherits that sizing and the footer does not change height when an answer
+   starts. A minimum width stops the box jumping as the label goes Stop →
+   Stopping…, which is a two-second state and would otherwise twitch. */
+.composer .ask-stop { min-width: 7.5ch; }
+/* ui.css dims a disabled .btn and has no rule for a disabled .input, so the field
+   the view disables — when the chat in the URL is not there — looked ready to
+   type in. It is the same .5 as .btn:disabled, so the pair dims together. */
+.composer .input:disabled { opacity: .5; cursor: default; background: var(--panel-2); }
+
+/* The chat controls: the rail toggle bottom-left, this thread's own two actions
+   bottom-right. The footer is where this view keeps every control it has — the
+   shape chips and the composer are both docked here — so the chat controls join
+   them rather than opening a second control zone at the top of a surface that
+   deliberately has no header. */
+.ask-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--gap-sm); flex-wrap: wrap; padding: 0 0 6px;
+}
+.ask-thread-acts { display: flex; align-items: center; gap: var(--gap-sm); flex-wrap: wrap; }
+/* Pressed, read from the attribute that already states it — no second class for
+   the JS to keep in step. */
+.ask-rail-btn[aria-expanded="true"] { color: var(--ink); background: var(--hover); }
+/* Rename is the same two-state gesture as .del-confirm, minus the red: the button
+   swaps for the field, and leaving it or pressing Escape puts the button back. */
+.ask-rename { display: flex; align-items: center; gap: var(--gap-sm); }
+.ask-rename-in { width: 22ch; max-width: 44vw; }
+
+/* ── Focus — always visible, always --accent ────────────────────────────────── */
+.ask-tick:focus-visible, .ask-notice-more:focus-visible, button.prov-line:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.ask-open:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius-pill);
+}
+
+/* ── Narrow ──────────────────────────────────────────────────────────────────
+   THE ONE RULE THAT DECIDES THE LAYOUT. Under 1080px the window cannot hold the
+   rail and the full reading measure at once, so the rail stops taking space and
+   covers the transcript instead. Nothing in the answer surface changes width, at
+   any window size, with the rail open or shut — which is the whole reason this is
+   a collapsing rail and not a second column.
+
+   1080 is the arithmetic, not a guess: 264 rail + 20 gap + 760 measure = 1044,
+   plus the shell's two 8px insets, rounded up to the next round number. It has a
+   twin in ask.js (RAIL_FITS), which is what makes picking a chat close the rail
+   only while it is a drawer. Move one and you must move the other.
+
+   Absolute, so the rail leaves the flex flow entirely: it does not merely look
+   like an overlay, the transcript genuinely gets the whole row. It also covers
+   the footer toggle that opened it, which is why the rail carries its own « in
+   .ask-rail-head. */
+@media (max-width: 1080px) {
+  .ask-rail {
+    position: absolute; top: 0; bottom: 0; left: 0; z-index: 20;
+    width: min(var(--ask-rail-w), 86vw);
+    padding: var(--pad-view) var(--gap-sm) 0;
+    background: var(--panel); border-right: 1px solid var(--line);
+    box-shadow: var(--shadow-lift);
+    /* The drawer's left edge IS the panel's left edge, and .app-view is a rounded
+       sheet that does not clip its children — so without this the drawer's square
+       corners overhang the panel's curve at the top and bottom. */
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+}
+@media (max-width: 620px) {
+  .ask-question { max-width: 92%; }
+  .ask-r-tags { display: none; }
+}
+@media (max-width: 460px) {
+  .ask-r-strength { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* NC-083. `animation-iteration-count`, not `animation: none`.
+     This said `animation: none`, and because view-ask.css loads AFTER ui.css the
+     shorthand reset also wiped the `animation-iteration-count: 1` that ui.css
+     sets for this exact selector — whose own comment says why: "the shimmer
+     collapsing to a static bar loses the 'still loading' signal". So a
+     deliberate decision was silently defeated by load order, and with reduced
+     motion on the pending line had no liveness signal whatsoever. One gentle
+     fade and then still, which is what ui.css intended; the counted second
+     beside it carries the liveness either way. */
+  .prov-searching { animation-iteration-count: 1; }
+  .prov-chev, .ask-actions, .ask-tick, .ask-result { transition: none; }
+}
+
+/* ── Answer shape ─────────────────────────────────────────────────────────────
+   Three chips, each showing where its control is set, above the composer.
+
+   A chip states its CURRENT value and reveals the alternatives only when asked;
+   laying every option out flat would be twelve elements to say three things, and
+   read as noise. No filled container behind the input, no accent-coloured
+   action, no icon per chip. This app's register is hairlines and one type size,
+   and it already has this exact control in People's Sort and Filter — so the
+   chip is ui.css's shared .chip and the menu is the shared .omni-pop, not a
+   third pattern.
+
+   .mini exists because .chip is 26px and sits next to a 28px control; at 22px these
+   read as secondary to the composer, which is what they are. */
+.ask-chips {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--gap-sm); padding: 0 2px var(--gap-sm);
+}
+.ask-chip-w { position: relative; }
+.chip.mini {
+  height: 22px; padding: 0 8px; gap: 5px;
+  font-size: var(--fs-overline); font-weight: 600;
+}
+/* Open, not selected: the chip is showing its menu. .chip already has a hover, so
+   this only has to hold that look while the popover is up. */
+.chip.mini.on { color: var(--ink); border-color: var(--faint); background: var(--hover); }
+.chip.mini:disabled { color: var(--faint); border-color: var(--line); cursor: default; }
+.ask-chip-cv { opacity: .5; display: inline-flex; align-items: center; }
+.ask-chip-cv svg { width: 12px; height: 12px; }
+/* Opens UPWARD: the composer is docked at the bottom of the view, so a downward
+   popover would open off-screen. */
+.ask-chip-pop {
+  top: auto; bottom: calc(100% + 4px);
+  left: 0; right: auto; width: max-content; min-width: 190px;
+}
+
+/* ── The buttons under a question the answer asked back (NC-156) ──────────────
+   Reuses .chip rather than inventing a fourth button shape: these are exactly
+   what the shape chips are — a small set of alternatives, one of which you pick
+   — and the app should not have two looks for that.
+
+   An ANSWERED question keeps its options, inert and dimmed, with the one that
+   was chosen marked .active. They are <span>s by then, not buttons, so nothing
+   focusable survives a question that can no longer be answered. */
+.ask-opts {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--gap-sm); max-width: 76ch; padding: 2px 0;
+}
+.ask-opts .chip { height: 28px; }
+.ask-opts.done .chip { opacity: .65; cursor: default; }
+.ask-opts.done .chip.active { opacity: 1; }

@@ -1,0 +1,19 @@
+# Where you put the CPython tarball that `appify.sh --embed` bundles. ~25MB
+# each, and a binary, so it must never be committed.
+#
+# NC-137: the tarballs are placed here by hand. There is no fetch, no pin and no
+# checksum anywhere in appify.sh — the build deliberately never touches the
+# network, and you download the tarball once yourself. A note saying otherwise
+# would make a fresh clone silently produce a smaller bundle than the README
+# promises.
+#
+# NC-225: the build also keeps the interpreter it prepared from that tarball
+# here (prepared-*/, about 54MB each, the two newest), so later builds copy it in
+# as a clone instead of preparing it again.
+.cache/
+
+# Build output (also covered by the repo-root .gitignore; kept here belt-and-
+# braces so a build run from inside packaging/ can't accidentally stage it).
+dist/
+
+.DS_Store
