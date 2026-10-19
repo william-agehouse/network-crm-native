@@ -44,8 +44,9 @@ iMessage, WhatsApp, email and your calendar, then gives you two ways to use them
 **If you already have the Mac app, skip this section.** On a Mac with an Apple chip
 and macOS 26 or later it needs no Terminal and nothing installed; see
 [Install as a Mac app](#install-as-a-mac-app).
-There is no ready-made download yet, so getting the app means building it once,
-in Terminal, with the two commands in that section. What follows is for running
+The ready-made download is on the [latest release](https://github.com/william-agehouse/network-crm-native/releases/latest): open
+`NetworkCRM.dmg`, read **Read Me First.txt**, and drag the app to Applications.
+That section also says how to build it yourself. What follows is for running
 from source.
 
 You need **Python 3.10 or newer**. A Mac does not come with one: `/usr/bin/python3`
@@ -93,8 +94,12 @@ add a key from Anthropic in Settings — see [Optional AI features](#optional-ai
 
 ### Install as a Mac app
 
-`packaging/` builds **Network CRM.app**: an ordinary Mac app with its own native
-window. To build it, in Terminal, from the repo folder:
+**Download it:** `NetworkCRM.dmg` is attached to the
+[latest release](https://github.com/william-agehouse/network-crm-native/releases/latest). Open it, read **Read Me First.txt** beside the app (it
+walks you through the first launch), and drag **Network CRM.app** to Applications.
+
+**Or build it yourself.** `packaging/` builds **Network CRM.app**: an ordinary Mac
+app with its own native window. To build it, in Terminal, from the repo folder:
 
 ```bash
 xcode-select --install          # Apple's command line tools: they compile the app (not a fix for Python)
@@ -143,8 +148,8 @@ Four things to know:
   works too; the release page lists each file's checksum. `packaging/.cache/` is
   ignored by git, so a fresh clone never has it. The building Mac has to have an
   Apple chip too.
-- **A build you make yourself is unsigned**, because signing needs an Apple
-  Developer ID certificate that you would have to bring.
+- **The download is unsigned, and so is a build you make yourself**, because
+  signing needs an Apple Developer ID certificate (a paid Apple membership).
   So macOS Gatekeeper stops the *first* launch, in one of two ways depending on
   how the app reached the Mac. Usually it says it could not check the app: click
   **Done**, then open **System Settings → Privacy & Security**, scroll to

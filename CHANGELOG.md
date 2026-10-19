@@ -7,9 +7,11 @@ The version the app reports lives in two places that must agree —
 `crm/updates.py`'s `CURRENT_VERSION` and `CFBundleShortVersionString` in
 `packaging/appify.sh`. A test enforces that; don't bump one alone.
 
-## Unreleased — 1.0.0
+## 1.0.0 — 19 October 2026
 
-Nothing has shipped yet. This is everything that would be in the first release.
+The first release, at
+[github.com/william-agehouse/network-crm-native/releases](https://github.com/william-agehouse/network-crm-native/releases)
+with `NetworkCRM.dmg` attached. Everything below is in it.
 
 ### One app, private to its own window (NC-330, 2026-10-17)
 
